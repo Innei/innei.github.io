@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  <entry>
+    <title><![CDATA[Nginx如何处理一个请求]]></title>
+    <url>%2F2019%2F02%2F18%2Fwhat444inNginx%2F</url>
+    <content type="text"><![CDATA[基于名字的虚拟主机Nginx首先选定由哪一个虚拟主机来处理请求。让我们从一个简单的配置（其中全部3个虚拟主机都在端口*：80上监听）开始： 1234567891011121314151617server &#123; listen 80; server_name example.org www.example.org; ...&#125;server &#123; listen 80; server_name example.net www.example.net; ...&#125;server &#123; listen 80; server_name example.com www.example.com; ...&#125; 在这个配置中，nginx仅仅检查请求的“Host”头以决定该请求应由哪个虚拟主机来处理。如果Host头没有匹配任意一个虚拟主机，或者请求中根本没有包含Host头，那nginx会将请求分发到定义在此端口上的默认虚拟主机。在以上配置中，第一个被列出的虚拟主机即nginx的默认虚拟主机——这是nginx的默认行为。而且，可以显式地设置某个主机为默认虚拟主机，即在”listen“指令中设置”default_server“参数： 12345server &#123; listen 80 default_server; server_name example.net www.example.net; ...&#125; “default_server“参数从0.8.21版开始可用。在之前的版本中，应该使用”default“参数代替。 请注意”default_server“是监听端口的属性，而不是主机名的属性。后面会对此有更多介绍。 如何防止处理未定义主机名的请求如果不允许请求中缺少“Host”头，可以定义如下主机，丢弃这些请求： 12345server &#123; listen 80; server_name &quot;&quot;; return 444;&#125; 在这里，我们设置主机名为空字符串以匹配未定义“Host”头的请求，而且返回了一个nginx特有的，非http标准的返回码444，它可以用来关闭连接。 从0.8.48版本开始，这已成为主机名的默认设置，所以可以省略server_name &quot;&quot;。而之前的版本使用机器的hostname作为主机名的默认值。 基于域名和IP混合的虚拟主机下面让我们来看一个复杂点的配置，在这个配置里，有几个虚拟主机在不同的地址上监听： 1234567891011121314151617server &#123; listen 192.168.1.1:80; server_name example.org www.example.org; ...&#125;server &#123; listen 192.168.1.1:80; server_name example.net www.example.net; ...&#125;server &#123; listen 192.168.1.2:80; server_name example.com www.example.com; ...&#125; 这个配置中，nginx首先测试请求的IP地址和端口是否匹配某个[server]配置块中的[listen]指令配置。接着nginx继续测试请求的Host头是否匹配这个[server]块中的某个[server_name]的值。如果主机名没有找到，nginx将把这个请求交给默认虚拟主机处理。例如，一个从192.168.1.1:80端口收到的访问www.example.com的请求将被监听192.168.1.1:80端口的默认虚拟主机处理，本例中就是第一个服务器，因为这个端口上没有定义名为www.example.com的虚拟主机。 默认服务器是监听端口的属性，所以不同的监听端口可以设置不同的默认服务器： 1234567891011121314151617server &#123; listen 192.168.1.1:80; server_name example.org www.example.org; ...&#125;server &#123; listen 192.168.1.1:80 default_server; server_name example.net www.example.net; ...&#125;server &#123; listen 192.168.1.2:80 default_server; server_name example.com www.example.com; ...&#125; 一个简单PHP站点配置现在我们来看在一个典型的，简单的PHP站点中，nginx怎样为一个请求选择location来处理： 1234567891011121314151617181920server &#123; listen 80; server_name example.org www.example.org; root /data/www; location / &#123; index index.html index.php; &#125; location ~* \.(gif|jpg|png)$ &#123; expires 30d; &#125; location ~ \.php$ &#123; fastcgi_pass localhost:9000; fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name; include fastcgi_params; &#125;&#125; 首先，nginx使用前缀匹配找出最准确的location，这一步nginx会忽略location在配置文件出现的顺序。上面的配置中，唯一的前缀匹配location是”/“，而且因为它可以匹配任意的请求，所以被作为最后一个选择。接着，nginx继续按照配置中的顺序依次匹配正则表达式的location，匹配到第一个正则表达式后停止搜索。匹配到的location将被使用。如果没有匹配到正则表达式的location，则使用刚刚找到的最准确的前缀匹配的location。 请注意所有location匹配测试只使用请求的URI部分，而不使用参数部分。这是因为写参数的方法很多，比如： 12/index.php?user=john&amp;page=1/index.php?page=1&amp;user=john 除此以外，任何人在请求串中都可以随意添加字符串： 1/index.php?page=1&amp;something+else&amp;user=john 现在让我们来看使用上面的配置，请求是怎样被处理的： 请求”/logo.gif“首先匹配上location “/“，然后匹配上正则表达式”\.(gif|jpg|png)$“。因此，它将被后者处理。根据”root /data/www“指令，nginx将请求映射到文件/data/www/logo.gif“，并发送这个文件到客户端。 请求”/index.php“首先也匹配上location “/“，然后匹配上正则表达式”\.(php)$“。 因此，它将被后者处理，进而被发送到监听在localhost:9000的FastCGI服务器。[fastcgi_param]指令将FastCGI的参数SCRIPT_FILENAME的值设置为”/data/www/index.php“，接着FastCGI服务器执行这个文件。变量$document_root等于[root]指令设置的值，变量$fastcgi_script_name的值是请求的uri，”/index.php“。 请求”/about.html“仅能匹配上location “/“，因此，它将使用此location进行处理。根据”root /data/www“指令，nginx将请求映射到文件”/data/www/about.html“，并发送这个文件到客户端。 请求”/“的处理更为复杂。它仅能匹配上location “/“，因此，它将使用此location进行处理。然后，[index]指令使用它的参数和”root /data/www“指令所组成的文件路径来检测对应的文件是否存在。如果文件/data/www/index.html不存在，而/data/www/index.php存在，此指令将执行一次内部重定向到”/index.php“，接着nginx将重新寻找匹配”/index.php“的location，就好像这次请求是从客户端发过来一样。正如我们之前看到的那样，这个重定向的请求最终交给FastCGI服务器来处理。]]></content>
+      <categories>
+        <category>Server</category>
+      </categories>
+      <tags>
+        <tag>nginx</tag>
+        <tag>运维</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[记意外重新部署Typecho]]></title>
+    <url>%2F2019%2F02%2F16%2FDeployTypecho%2F</url>
+    <content type="text"><![CDATA[前言在使用lamp脚本部署discuz失败后以至于apache无法启动。原因未知。 然后决定删除机器,重新部署。不慎将博客所搭建的那台删除了。我当时内心#%#￥#。 几分钟后，我决定重建。幸好数据库有备份。应该还有救。 准备部署lnmp环境这里推荐使用 https://lnmp.org/install.html （可以先进入screen再进行如下操作） 1wget http://soft.vpser.net/lnmp/lnmp1.5.tar.gz -cO lnmp1.5.tar.gz &amp;&amp; tar zxf lnmp1.5.tar.gz &amp;&amp; cd lnmp1.5 &amp;&amp; ./install.sh lnmp 建议使用前先将云主机性能拉到最高，否则时间需求过高。 这里我选用高版本php导致安装失败两次，心塞。 终于失败两次后胜利部署。 建立虚拟主机 小插曲 在连接mysql时，出现了错误，如下。 日志如下： 原因是缓冲区过大，内存不足所导致。 方法一： 增加swap 方法二： 减少缓冲区大小 nano /etc/my.cnf 找到innodb_buffer_pool_size 调整合适的大小。 建立虚拟主机使用 lnmp vhost add cd /home/wwwroot/innei.ml 然后clone typecho到这里 git clone https://github.com/typecho/typecho.git . 设置好域名后，进入你的网站 比如（https://innei.ml） 然后按照步骤安装。 备份恢复进入phpmyadmin修改user表。允许用户远程登录 插曲 打开了gcp的防火墙。却没想到系统的防火墙这么猛。 使用 iptables -L -n --line-numbers标号 使用iptables -D INPUT 6删除 使用iptables -A INPUT -p tcp --dport 3306 -j ACCEPT添加允许。 胜利还原。 签发证书启用https拿到cf的api,export两条记录 下载acem.sh 12curl https://get.acme.sh | sh.acme.sh/acme.sh --issue --dns dns_cf -d innei.ml -d *.innei.ml 然后使用lnmp ssl add添加证书 后记再经历2次安装lnmp失败。 一次DB缓冲区溢出。 iptables防火墙DROP 一次删库。 虽然我花了一个下午时间来还原，遇到了不少麻烦，还有很多热心的网友，我学习到了很多。再次感谢你们！ 教训：数据无价，谨慎操作]]></content>
+      <categories>
+        <category>Blog</category>
+        <category>运维</category>
+      </categories>
+      <tags>
+        <tag>Blog</tag>
+        <tag>Typecho</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[天才算法之睡眠排序(C#实现)]]></title>
+    <url>%2F2019%2F02%2F13%2FSleepSort-C%2F</url>
+    <content type="text"><![CDATA[C#多线程之睡眠排序 这个太吊了 不想多说了 让我先笑会 我也会写睡眠算法了。哈哈哈嗝~ 下面代码引入 12345678910111213141516using System;using System.Threading;namespace SleepSort &#123; class SleepSortMainEntence &#123; static void Main (string[] args) &#123; int[] a = new int[] &#123; 123, 243, 32, 443, 72, 3 &#125;; foreach (var item in a) &#123; // 遍历数组 Thread th = new Thread (x =&gt; &#123; Thread.Sleep (item * 10); //睡眠时间,时间越短,越不精确 System.Console.WriteLine (item); // 睡完输出 &#125;); th.Start (); //开始线程 &#125; &#125; &#125;&#125;]]></content>
+      <categories>
+        <category>Programing</category>
+      </categories>
+      <tags>
+        <tag>Study</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[(转)搞ACM的你伤不起]]></title>
+    <url>%2F2019%2F02%2F09%2F%E8%BD%AC-%E6%90%9EACM%E7%9A%84%E4%BD%A0%E4%BC%A4%E4%B8%8D%E8%B5%B7%2F</url>
+    <content type="text"><![CDATA[字字珠矶，句句肺腑！ RoBa原创，转载请注明出处 劳资六年前开始搞ACM啊！！！！！！！！！！从此踏上了尼玛不归路啊！！！！！！！！！！！！谁特么跟劳资讲算法是程序设计的核心啊！！！！！！尼玛除了面试题就没见过用算法的地方啊！！！！！！谁再跟劳资讲算法之美算法的力量，劳资一本算法导论拍死你啊！！！！！！！！那是搞ACM的入门书啊！！！！特么的入门书就一千多页啊！！！！！！！还没有习题答案啊，学完了你特么都不知道自己到底会不会啊有木有！！！！！！然后你就得看lrj的黑书啊！！！！！！还是特么的没有习题答案啊！！！！那书难的一B啊！！！！人家一个“显然”得出的结论够你想一礼拜啊有木有！！！！一个课后题够你想几个月啊有木有！！！！然后还有一堆堆的书啊！！！！每一类算法都足够写一本书啊！！！！每本都是砖头一样啊！！！！还都特么是英文的啊！！！！也有中文翻译版啊！！！！！！翻译得跟屎一样啊！！！！你看的时候得把它再变回英文才能懂啊！！！！！！有木有！！！！！！ ACM的题目类型是没有范围的啊！！！！！！动态规划有木有！！！！数据结构有木有！！！！图论有木有！！！！！！计算几何有木有！！！！！！数论有木有！！！！！！要写两三百行的模拟题有木有！！！！！！特么连物理题化学题都有啊！！！！！！还有理论上就不可做的NP难问题啊！！！！！！特么理论上不可做的题也有人能AC啊！！！！坑爹啊！！！！ 课本上学的东西完全不给力啊！！！！！！你以为学过一个最长公共子串就是懂动态规划了啊！！！！！！树型的有木有！！！！状态压缩的有木有！！！！插头的有木有！！！！而且特么写出来就超时啊！！！！！！你得四边形优化啊！！！！你得斜率优化啊！！！！你得队列优化啊！！！！特么恨不得把要算十年的程序优化到一秒啊！！！！你以为学过一个二叉搜索树就是懂数据结构了啊！！！！！！平衡啊旋转啊红啊黑啊有木有！！！！伸展啊随机权重啊合并啊拆分啊有木有！！！！！！你以为学过一个Dijkstra最短路就是懂图算法了啊！！！！！！特么的图里有几百万个点啊！！！！！！得用堆来优化啊！！！！而且边权要是负的就不对了啊！！！！还有环啊！！！！而且特么的你根本看不出是最短路问题啊！！！！！！为神马最短路算法可以用来解不等式啊！！！！还有网络流啊！！！！特么的课本上的算法铁定超时啊！！！！！！你得看论文去研究神马Dinic啊SAP啊！！！！！！而且你还是根本看不出是网络流啊！！！！！！网络流是在图上来求啊！！！！特么的图在哪里啊！！！！特么的八竿子打不着的问题都能变成网络流啊！！！！！！ 这些你都学会了啊！！！！想参加比赛了啊！！！！发现想拿个成绩非常难啊！！！！！！校内选拔赛就好几百人报名啊有木有！！！！！！最后只能剩下十几个啊！！！！人家都是竞赛保送的啊！！！！！！中学就学了好几年了有木有！！！！怎么比的过啊！！！！！！进了校队以后你就不要想寒暑假了啊！！！！！！夏天劳资全身脱光了涂满花露水半夜刷题有木有！！！！！！冬天劳资跑遍校园找不到一个开门的食堂有木有！！！！！！而且特么老外的在线比赛都在半夜啊！！！！！！！！在机房通宵是常事啊有木有！！！！！！ 比赛是三个人啊！！！！但是只有一台电脑啊！！！！！！特么的ACM组委会连多买几台电脑都不肯啊！！！！！！队友占着机器你就只能干着急啊！！！！！！想把他踹一边儿去啊！！！！！！没机器你就得在纸上调试啊！！！！！！你的脑子就是个CPU啊有木有！！！！你要是摊上一个啥都不会，连读题都误导你的队友，你就死定了啊！！！！！！不怕神一样的对手就怕猪一样的队友啊！！！！ 你终于参加区域赛了啊！！！！一百多个队啊！！！！！！还有一大堆打星号的高中生们啊！！！！！！都是全国前几名级别的有木有！！！！还有一大堆打星号的老不死们啊！！！！！！毕业了还要来诈尸啊！！！！一开场那气球呼呼地挂啊！！！！你还没读完题人家已经AC了啊！！！！而且最先过的不一定是最简单的啊！！！！人家故意在误导你啊有木有！！！！！！比赛要五个小时啊！！！！结束了以后脑子都抽筋了啊！！！！人家做七八道题，你连一半都不到啊！！！！！！拿个毛的奖啊！！！！去个毛的总决赛啊！！！！！！去了总决赛也是被虐啊！！！！！！老毛子们更尼玛不是人啊有木有！！！！！！连清华都被虐啊有木有！！！！！！ 你拿着一堆Honorable Mention毕业了啊！！！！想找工作啊！！！！谁说懂算法很容易找到好工作啊！！！！都特么要项目经验有木有！！！！劳资成天盯着一个黑乎乎的控制台窗口！！！！哪有时间做项目啊！！！！！！同学们都是网站啊桌面程序啊做过一堆啊！！！！人家对面试官侃侃而谈啊！！！劳资只好说劳资除了算法啥也不会啊！！而且其实算法也没学会啊！！！！！坑爹啊！！！！ 终于工作了啊！！！！发现算法神马的完全用不上啊！！！！稍微复杂点的算法都有现成的库可以用啊！！！！！！要懂Shell编程有木有！！！！要懂多线程有木有！！！！要懂Socket有木有！！！！要懂分布式有木有！！！！要懂J2EE有木有！！！！要懂设计模式有木有！！！！ 要懂以下省略三千字有木有！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！ 总之搞ACM的上辈子都是脑细胞死光钻到牛角尖里出不来的天使啊！！！！！！你伤不起啊！！！！！！]]></content>
+  </entry>
+  <entry>
+    <title><![CDATA[迁移Hexo到云服务器的一次经历]]></title>
+    <url>%2F2019%2F02%2F04%2Fmove-%3Eserver%2F</url>
+    <content type="text"><![CDATA[今天是大年初一, 下午配置域名跳转时又出现了问题, 几经波折, 终于搞定了~ 所以来更新一下博文. 原先, 我的博客托管在Github Pages上, 这几天一直都很慢.. 加载要半年. 于是乎, 今晚没事干, 决定迁移到服务器上面, 选的是GCP的服务器, 地区选在新加坡. 延迟大概有80ms, 比github快多了. GCP的好处有以下: 均衡负载, 可以实现全球cdn加速 免费. 预备工作虚拟主机一台. 国内可选用 腾讯云, 阿里云. 学生机9.9还是可以接受的. Linux环境, 我选用的是Debian 9. 域名. 开始之前,确保你能够免密连接你的主机, 则可以减少很多时间来部署. 通常采用public key authorization 通过ssh连接服务器之后, 首先安装git 和 nginx. 1sudo apt install nginx git 初始化 Git 仓库建立仓库可以将git仓库放到自定义位置，我是将其放在 /var/repo/blog.git 目录下的 123sudo mkdir /var/repocd /var/reposudo git init --bare blog.git 使用 –bare 参数，Git 就会创建一个裸仓库，裸仓库没有工作区，我们不会在裸仓库上进行操作，它只为共享而存在。 配置 git hooks 我们这里要使用的是 post-receive 的 hook，这个 hook 会在整个 git 操作过程完结以后被运行，关于 hooks的详情内容可以参考这里。 在 blog.git/hooks 目录下新建一个 post-receive 文件 1cd /var/repo/blog.git/hooks 编辑这个文件 1nano post-receive 在 post-receive 文件中写入如下内容 12#!/bin/shgit --work-tree=/home/www/hexo --git-dir=/var/repo/blog.git checkout -f 注意，/home/www/hexo 要换成你自己的部署目录，正如上文所说，我是的配置目录是/home/www/hexo。/var/repo/blog.git是git仓库的位置。上面那句 git 命令可以在我们每次 push 完之后，把部署目录更新到博客的最新生成状态。这样便可以完成达到自动部署的目的了。 设置这个文件的可执行权限 1chmod +x post-receive 配置本地_config.yml文件,完成自动化部署 现在配置 hexo 的 deploy 修改 hexo 目录下的 _config.yml 找到 deploy, 修改为： 123456deploy: type: git repository: GCP: root@x.x.x.x:/var/www/blog.git github: git@github.com:xxx branch: master repo 的地址为你自己的地址以及 git 仓库目录 至此，我们的 hexo 自动部署已经全部配置好了 推送本地hexo到远程服务器打开终端, cd到本地hexo目录, 输入 1hexo clean &amp;&amp; hexo g &amp;&amp; hexo d 将同时push到github和远程服务器 配置nginxnginx用于监听80和443端口, 实现http(80)自动跳转https(443). 前提是 你需要一个ssl证书. 为防止直接ip的访问，使用return 444; 直接丢弃Host为ip或者不存在的包。 配置如下: 12345678910111213141516171819202122232425262728293031323334353637383940server &#123; listen 80 default_server; server_name _; return 444; &#125;server &#123; listen 443 default_server; server_name _; ssl_certificate /var/www/x.crt; ssl_certificate_key /var/www/x.key; return 444;&#125;server &#123; listen 80; server_name yiny.ml; index index.html index.php index.htm; return 301 https://$server_name$request_uri; location ~ / &#123; root /home/www/hexo; index index.html index.php index.htm; &#125; &#125;server &#123; listen 443 ssl http2; ssl on; ssl_certificate /var/www/x.crt; # 对应origin certificate ssl_certificate_key /var/www/x.key; # 对应private key root /home/www/hexo; server_name yiny.ml; index index.html index.htm index.nginx-debian.html; &#125;&#125;&#125; 在server_name 一处修改为自己的域名. ssl_certificate(_key)填写自己的ssl认证文件(crt和key) 这里说下我之前遇到的坑, cloudflare的ssl证书只有在使用它的cdn加速后才会是 “认证的证书”,否则都是”证书不信任”,这里推荐使用腾讯云dnspod解析 一般常规操作都是直接套cf比较妥。毕竟可以减轻ddos的攻击。 配置域名进入域名控制台后, 进行如下配置,见 记录值 修改为 虚拟主机的ip. 等待10分钟后. 试试进入域名吧. 速度明显比github pages快多了, http顺利跳转https. 进阶配置和管理跳转配置设置404跳转网站1error_page 404 500 502 503 504 /404.html; 403跳转百度1error_page 403 = http://baidu.com; datanet配置datanet是linux上一款性能分析工具, 并且具有webUI后端. 他有如下好处: 实时 Netdata可在3毫秒内将图表查询结果反馈给到网页上。在3毫秒内，Netdata完成了计算图表结果，生成json文本，压缩并发送到web浏览器这些操作。查看access.log可看到这些操作各花费了多少时间。 无需管理员身份运行 Netdata无需管理员身份。如果以管理员身份启动Netdata，它会切换到netdata使用者身份来运行。 无需大量手动配置 Netdata支持大量的配置设定，开发者让Netdata自动检测大部分环境，但仍有一些无法覆盖的需要用户手动配置。 无需硬盘输出/输入 Netdata不占用硬盘吞吐量，只是会记录日志，而且我们甚至可以禁用日志操作。这个设计有效避免了工具会干扰其他应用表现的副作用。 嵌入式web服务器 无需运行其他软件来查看netdata输出结果，打开网页查看。 图表化的服务质量数据 以动态图表显示linux内核流量控制服务质量类别。 话不多说, 开始配置吧. 1bash &lt;(curl -Ss https://my-netdata.io/kickstart.sh) 安装后默认是通过http://xxx:19999/ 访问(xxx是你的主机ip) 由于netdata没有帐号密码体系，为保护服务器隐私，我们要使用nginx反代，通过域名访问，并使用账号密码授权。首先，我们安装apache工具集，我们需要其中的htpasswd为我们生成用户信息1sudo apt-get install apache2-utils 接下来创建目录，创建账号1234mkdir /usr/local/nginxhtpasswd -c /usr/local/nginx/passwd.db usernamepwdre-type pwd 添加一个nginx的配置vim /etc/nginx/conf.d/netdata.conf，内容如下 12345678910111213141516171819202122upstream netdatahttp&#123; server 127.0.0.1:19999;&#125;server &#123; listen *:80; server_name netdata.yiny.ml; auth_basic &quot;netdata&quot;; auth_basic_user_file /usr/local/nginx/passwd.db; location / &#123; proxy_pass http://netdatahttp; proxy_redirect off; proxy_set_header Host $host; proxy_set_header X-Real_IP $remote_addr; proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; &#125;&#125; 打开域名测试一下效果 配置多域名跳转同一域名首先, 你要在域名控制台将域名指向主机ip, 在nginx中新建一个虚拟主机, 1234567891011121314151617181920212223242526272829server &#123; listen 80 ; server_name ab.com; index index.html index.php index.htm; return 301 https://yiny.ml$request_uri; location ~ / &#123; root /home/www/toblog; index index.html index.php index.htm; &#125; &#125;server &#123; listen 443 ; server_name ab.com; index index.html index.php index.htm; ssl_certificate /xxxx; # 对应origin certificate ssl_certificate_key /xxxx; # 对应private key return 301 https://yiny.ml$request_uri; location ~ / &#123; root /home/www/toblog; index index.html index.php index.htm; &#125; &#125; 需要注意的是, 443端口必须引入证书才能实现跳转. 否则, 就会出现这样的结果…. 配置完成之后,重启nginx. 这样就搞定了.. 压缩静态网站 安装gulp3.9.1(一定要这个) 1npm install gulp@3.9.1 在站点根目录创建gulpfile.js文件，内容如下 12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849var gulp = require('gulp');var babel = require('gulp-babel');var plugins = require('gulp-load-plugins')();gulp.task("clean",function() &#123; return gulp.src("./public/*") .pipe(plugins.clean());&#125;);gulp.task("css",function()&#123; var stream = gulp.src(["public/**/*.css","!public/**/*.min.css"]) .pipe(plugins.minifyCss(&#123;compatibility: 'ie8'&#125;)) .pipe(gulp.dest("./public/")); return stream;&#125;);gulp.task("js",function()&#123; var stream = gulp.src(["public/**/*.js","!public/**/*.min.js"]) .pipe(babel(&#123;presets: ['env']&#125;)) .pipe(plugins.uglify()) .pipe(gulp.dest("./public/")); return stream;&#125;);gulp.task("html",function()&#123; var stream = gulp.src("public/**/*.html") .pipe(plugins.minifyHtml()) //.pipe(plugins.rename(&#123;suffix: ".gulp"&#125;)) .pipe(gulp.dest("./public/")); return stream;&#125;);gulp.task("mv",["html","css","js"],function() &#123; var stream = gulp.src("./dst/*") .pipe(gulp.dest("./public/")); /*.pipe(plugins.shell([ "cp -r ./dst/* ./public/" ])); */ return stream;&#125;);gulp.task("watch",function() &#123; gulp.watch("public/*",["optimise"]);&#125;);gulp.task("default",["html","css","js"],function()&#123; console.log("gulp task ok!");&#125;); 在hexo d之前先运行gulp即可。 参考记录折腾路上用到的教程 自2-3开始]]></content>
+      <categories>
+        <category>Blog</category>
+      </categories>
+      <tags>
+        <tag>Blog</tag>
+        <tag>Hexo</tag>
+        <tag>Cloud</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[记录折腾路上用到的教程 自2-3开始]]></title>
+    <url>%2F2019%2F02%2F03%2Frecord(from19-2-3)%2F</url>
+    <content type="text"><![CDATA[运维篇IT基础设施：使用netdata监控CentOS7性能 - 简书 netdata: Real-time performance monitoring nginx重启 failed (98: Address already in use) Linux下防御DDOS攻击的操作梳理 查看端口 netstat -ntpl 博客篇Hexo部署到CentOS 如何在服务器上搭建hexo博客 使用gulp精简hexo博客代码 Let’s Encrypt 泛域名证书免费申请 - 云+社区 - 腾讯云 OneDrive变身外链网盘-Aria2+Aria2Ng+OneIndex自动上传OneDrive 1wget https://www.moerats.com/usr/shell/Aria2_OneIndex.sh &amp;&amp; bash Aria2_OneIndex.sh Typecho 配置 CDN 后获取访客真实 IP 想要正确获取访客真实IP，请在 Typecho 站点根目录里的 config.inc.php 添加下面这段代码。 关于这个获取使用 CDN 后的真实访客IP地址的代码在 WordPress 上也是是适用的，WordPress 放到 wp-config.php 里即可。 1234567&gt; //绕过 CDN 代理IP获取客户真实IP地址&gt; if(isset($_SERVER['HTTP_X_FORWARDED_FOR']))&gt; &#123;&gt; $list = explode(',',$_SERVER['HTTP_X_FORWARDED_FOR']);&gt; $_SERVER['REMOTE_ADDR'] = $list[0];&gt; &#125;&gt;]]></content>
+      <categories>
+        <category>Study</category>
+      </categories>
+  </entry>
+  <entry>
+    <title><![CDATA[L1-027 出租 (Python实现)]]></title>
+    <url>%2F2019%2F02%2F01%2FL1-027%2F</url>
+    <content type="text"><![CDATA[L1-027 出租下面是新浪微博上曾经很火的一张图： 一时间网上一片求救声，急问这个怎么破。其实这段代码很简单，index数组就是arr数组的下标，index[0]=2 对应 arr[2]=1，index[1]=0 对应 arr[0]=8，index[2]=3 对应 arr[3]=0，以此类推…… 很容易得到电话号码是18013820100。 本题要求你编写一个程序，为任何一个电话号码生成这段代码 —— 事实上，只要生成最前面两行就可以了，后面内容是不变的。 输入格式：输入在一行中给出一个由11位数字组成的手机号码。 输出格式：为输入的号码生成代码的前两行，其中arr中的数字必须按递减顺序给出。 输入样例：118013820100 输出样例：12int[] arr = new int[]&#123;8,3,2,1,0&#125;;int[] index = new int[]&#123;3,0,4,3,1,0,2,4,3,4,4&#125;; Python简易实现12345678910111213141516n = input()t = nn = list(n)n = list(set(n))n.sort()n.reverse()index = []for j in t: c = 0 for i in n: c = c + 1 if i == j: index.insert(12,str(c-1)) breakprint("int[] arr = new int[]&#123;" + ','.join(n) + "&#125;;")print("int[] index = new int[]&#123;" + ','.join(index) +"&#125;;") 参考 平时python输出list字符串时，会自动加上引号和中括号。 比如 1str=[&apos;hello&apos;,&apos;world&apos;] 12&gt;&gt;&gt;str[&apos;hello&apos;, &apos;world&apos;] 方法1 可以用join方法： 12&gt;&gt;&gt;print &quot; &quot;.join(str) hello world 其中：Python join() 方法用于将序列中的元素以指定的字符连接生成一个新的字符串。 比如： 1234str = &quot;-&quot;seq = (&quot;a&quot;, &quot;b&quot;, &quot;c&quot;)print str.join( seq )` 输出结果： 1a-b-c 方法2：如果list存放的是数字，则：将其转为int即可。因为原来存放的是string型的 1234str=['1', '2', '3']for i in str: int(i) print(i) 用Python将list中的string转换为int 假设有这样一个 results = [&#39;1&#39;, &#39;2&#39;, &#39;3&#39;]转化为下面这个样子 results = [1, 2, 3]我们可以使用map函数在Python2中这样操作： results = map(int, results)在Python3中这样操作： results = list(map(int, results)) 欢迎交流. 初学py,如有不足,欢迎指出.]]></content>
+      <categories>
+        <category>Programing</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+        <tag>ACM</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[打印沙漏(C#实现)]]></title>
+    <url>%2F2019%2F01%2F31%2Facm-test%2F</url>
+    <content type="text"><![CDATA[打印沙漏 本题要求你写个程序把给定的符号打印成沙漏的形状。例如给定17个“*”，要求按下列格式打印 12345***** *** * ******** 所谓“沙漏形状”，是指每行输出奇数个符号；各行符号中心对齐；相邻两行符号数差2；符号数先从大到小顺序递减到1，再从小到大顺序递增；首尾符号数相等。 给定任意N个符号，不一定能正好组成一个沙漏。要求打印出的沙漏能用掉尽可能多的符号。 输入格式:输入在一行给出1个正整数N（≤1000）和一个符号，中间以空格分隔。 输出格式:首先打印出由给定符号组成的最大的沙漏形状，最后在一行中输出剩下没用掉的符号数。 输入样例:119 * 输出样例:123456***** *** * ********2 C#实现123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384using System;using System.Collections.Generic;using System.Linq;using System.Text;namespace PrintSandglass &#123; class CalNum &#123; public int GetNum (string n, ref int r) &#123; int Num = int.Parse (n); // 字符串转化为int Num--; r = Num % 2; Num /= 2; int i; for (i = 3; Num &gt; 0; i += 2) &#123; Num = Num - i; if (Num == 0) &#123; return i; break; &#125; &#125; r = (r + (Num + i - 2)) * 2; return (i - 4); &#125; public void DisplaySandglass (int i) &#123; int count = 0, t = i, tcount = 0; int LastNum = i; for (int j = i / 2; j &gt; 0; j--) &#123; // for (tcount = count; tcount &gt;= 1; tcount--) &#123; // C#一定要括起来 哪怕只有一条语句 // System.Console.Write (&quot; &quot;); //&#125; for (t = i; t &gt;= 1; t--) &#123; System.Console.Write (&quot;*&quot;); &#125; i -= 2; count++; System.Console.Write (&quot;\n&quot;); for (tcount = count; tcount &gt;= 1; tcount--) &#123; System.Console.Write (&quot; &quot;); &#125; &#125; System.Console.Write (&quot;*\n&quot;); count = --count; t = (i += 2); tcount = 0; for (int j = 0; j &lt; LastNum / 2; j++) &#123; for (tcount = count; tcount &gt;= 1; tcount--) &#123; // C#一定要括起来 哪怕只有一条语句 System.Console.Write (&quot; &quot;); &#125; for (t = i; t &gt;= 1; t--) &#123; System.Console.Write (&quot;*&quot;); &#125; i += 2; count--; System.Console.Write (&quot;\n&quot;); &#125; &#125; &#125; class MainEntrance &#123; static int Main (string[] args) &#123; string n = Console.ReadLine (); int r = 0; CalNum c = new CalNum (); int LastNum = c.GetNum (n, ref r); c.DisplaySandglass (LastNum); System.Console.WriteLine (&quot;&#123;0&#125;&quot;, r); return 0; &#125; &#125;&#125; 欢迎交流. 初学C#,如有不足,欢迎指出.]]></content>
+      <categories>
+        <category>Programing</category>
+      </categories>
+      <tags>
+        <tag>ACM</tag>
+        <tag>C#</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[折腾失败的新主题]]></title>
+    <url>%2F2019%2F01%2F25%2F%E6%8A%98%E8%85%BE%E5%A4%B1%E8%B4%A5%E7%9A%84%E6%96%B0%E4%B8%BB%E9%A2%98%2F</url>
+    <content type="text"><![CDATA[记2019年1月25日 博客从Next主题更换为更为简洁的polarbear 因为太简洁了, 所以我想把原先的统计信息与评论系统加入. 再折腾很久的layout, 甚至直接导入appid, 放入layout.swig还是失败了. 所以说现在这个博客是空无一物. 可能以后我会换回Next的吧.]]></content>
+      <categories>
+        <category>Blog</category>
+      </categories>
+      <tags>
+        <tag>hexo</tag>
+        <tag>theme</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[VSC配置C/C++开发环境正确配置（适用于类Unix/Windows平台）]]></title>
+    <url>%2F2019%2F01%2F24%2Fvscode_config-%3EClang%2F</url>
+    <content type="text"><![CDATA[写在前面鉴于网上教程可用性不高,为此写下教程. 此教程适合于广大Mac(全平台)用户, Windows用户可选宇宙无敌的VS.(划掉) (更新) Windows试用llvm和gdb实现调试. 必要的组件123Xcode command toolsvscCpptools 安装Xcode command tools终端键入 1xcode-select --install 安装cpptools 配置VSC c_cpp_properties.json 12345678910111213141516171819&#123; "configurations": [ &#123; "name": "Mac", "includePath": [ "$&#123;workspaceFolder&#125;/**" ], "defines": [], "macFrameworkPath": [ "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk/System/Library/Frameworks" ], "compilerPath": "/usr/bin/clang", "cStandard": "c11", "cppStandard": "c++17", "intelliSenseMode": "clang-x64" &#125; ], "version": 4&#125; launch.json 1234567891011121314151617181920212223242526&#123; "version": "0.2.0", "configurations": [ &#123; "name": "(gdb) Launch", "type": "cppdbg", "request": "launch", "program": "$&#123;workspaceRoot&#125;/Debug/$&#123;fileBasenameNoExtension&#125;.out", "args": [], "stopAtEntry": false, "preLaunchTask": "build", "cwd": "$&#123;workspaceRoot&#125;", "environment": [], "externalConsole": true, "MIMode": "lldb", // "miDebuggerPath": "/etc/bin", "setupCommands": [ &#123; "description": "Enable pretty-printing for gdb", "text": "-enable-pretty-printing", "ignoreFailures": true &#125; ] &#125; ]&#125; tasks.json 123456789101112131415161718192021&#123; "version": "2.0.0", "tasks": [ &#123; "label": "build", "command": "clang++", "type": "shell", "args": [ "-g","-o","Debug/$&#123;fileBasenameNoExtension&#125;.out","$&#123;file&#125;", "-std=c++11", ], "presentation": &#123; "echo": true, "reveal": "always", "focus": false, "panel": "shared" &#125; &#125; ],&#125; 配置完成 临时文件将保存在Debug文件夹中 Windows下的配置 安装LLVM LLVM Download Page，在网页中找到适用于Windows 64位的最新预编译版本，不需要下载sig签名文件。安装过程中注意选择为所有用户安装，这样会为你添加到环境变量。 这两步完成以后打开cmd，输入clang应该可以看到如下输出。 安装MinGW-w64 MinGW-w64 - for 32 and 64 bit Windows，安装时注意选择体系架构为x86_64。由于网络原因，你可能不能把它下载下来，经过一点探索，安装程序需要下载一个叫做x86_64-7.1.0-release-posix-seh-rt_v5-rev2的文件，其实我们可以直接在SourceForge上搜到这个MinGW-w64 - for 32 and 64 bit Windows，到里面选择第一个下载。下载完成后解压里面的mingw64文件夹中的内容到你安装LLVM的同一个目录合并，合并里面所有文件夹，不会有冲突。 打开终端验证是否能够打开gdb.exe. 配置vscode launch.json 1234567891011121314151617181920212223242526&#123; "version": "0.2.0", "configurations": [ &#123; "name": "(gdb) Launch in Windows", "type": "cppdbg", "request": "launch", "program": "$&#123;workspaceRoot&#125;/$&#123;fileBasenameNoExtension&#125;.exe", "args": [], "stopAtEntry": false, "preLaunchTask": "BuildInWindows", "cwd": "$&#123;workspaceRoot&#125;", "environment": [], "externalConsole": true, "MIMode": "gdb", "miDebuggerPath": "gdb.exe", "setupCommands": [ &#123; "description": "Enable pretty-printing for gdb", "text": "-enable-pretty-printing", "ignoreFailures": false &#125; ] &#125;, ]&#125; tasks.json 12345678910111213141516171819202122&#123; "version": "2.0.0", "tasks": [ &#123; "label": "BuildInWindows", "command": "clang++", "type": "shell", "args": [ "-g","-o","$&#123;fileBasenameNoExtension&#125;.exe","$&#123;file&#125;", "-std=c++11", ], "presentation": &#123; "echo": true, "reveal": "always", "focus": false, "panel": "shared" &#125; &#125; ],&#125; 最后成功调试! 引用 在VS Code中使用Clang作为你的C++编译器]]></content>
+      <categories>
+        <category>Study</category>
+      </categories>
+      <tags>
+        <tag>VScode</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[VSC配置C#开发环境的正确姿势]]></title>
+    <url>%2F2019%2F01%2F24%2Fvscode_config-%3ECsharp%2F</url>
+    <content type="text"><![CDATA[写在前面鉴于网上教程为数较少,为此写下教程. 此教程适合于广大Mac以及Linux用户,Windows用户可选宇宙无敌的VS. 必要的组件123Mono-mdkvscMono-debug 安装Mono-sdk Mac : 1brew cask install mono-mdklinux linux(Ubuntu) 1sudo apt-get install mono-complete 以下命令能正确运行即安装成功 配置vscode 安装mono-debug , C# 扩展 新建一个C#文件夹, 成为你的工作区 按下 command(ctrl)+shift+P 输入task 回车 建立tasks.json文件 复制以下内容到tasks.json 1234567891011121314151617181920212223&#123; "version": "2.0.0", // 该命令需要在系统变量内定义 "tasks": [ &#123; "label": "build", "command": "mcs", "type": "shell", "args": [ "$&#123;file&#125;","--output","Debug/$&#123;fileBasenameNoExtension&#125;.exe" ], "presentation": &#123; "echo": true, "reveal": "always", "focus": false, "panel": "shared" &#125;, "problemMatcher": [] &#125; ],&#125; 然后再按下 command(ctrl)+shift+P 输入build 回车 建立launch.json. 12345678910111213141516&#123; "version": "0.2.0", "configurations": [ &#123; "name": "Launch", "type": "mono", "request": "launch", "preLaunchTask": "build", "program": "$&#123;workspaceRoot&#125;/Debug/$&#123;fileBasenameNoExtension&#125;.exe", "cwd": "$&#123;workspaceRoot&#125;", "console": "externalTerminal", &#125;, ]&#125; 在工作区目录下新建一个Debug文件夹. 以后调试生成的程序都在这里. 建立Hello.cs文件, 按下F5进行调试 , 测试通过 123456789namespace HelloWorld&#123; class Hello &#123; static void Main(string[] args) &#123; System.Console.WriteLine(&quot;Hello World!!&quot;); &#125; &#125;&#125;]]></content>
+      <categories>
+        <category>Study</category>
+      </categories>
+      <tags>
+        <tag>VScode</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[利用爬虫抓取新理念英语答案]]></title>
+    <url>%2F2018%2F11%2F07%2FhowtogetEAnswer%2F</url>
+    <content type="text"><![CDATA[在此之前,在他人的博客中看到一篇文章新理念外语网络教学平台——获取任意答案,但是写得不是很详细,下面我来详细的说明一下. 原理首先进入自己学校的平台.打开开发者工具–network,然后登陆 可以看到headers和data.并且data中的tbName和tbPwd都没有加密.这是之后我们需要post的 包括上面两个_ 答案从哪来如果你此前做过测试并且获得过60分以上的成绩,就可以查看那个习题答案. 我们打开开发者工具– network.然后查看答案. 我们发现 答案是通过viewTestTask.apsx获取的.其中data中三个数字就代表返回给viewTestTask.aspx来获取测试的答案. 那么我们就需要 获取这三个数字. 如何获取三个关键数字首先我们需要进入本周测试的网页. 然后打开开发者工具–network 抓取通过viewTestTask.aspx传入header和data进行抓取. 由于先人的代码会造成 UnicodeEncodeError: &#39;latin-1&#39; codec can&#39;t encode characters in position 32-37: ordinal not in range(256)错误,我进行了二次修正.仅供参考.适合版本[新理念英语v6.2] 需要修改的地方已经标注. python版本3.7 123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354import randomimport requestsroot = "http://192.168.9.12/npels/" #网址自行修改answerurl=root+"/Student/viewTestTask.aspx" #路径自行修改ctoken = Nones = requests.session()ua = &#123;"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.13; rv:57.0) Gecko/20100101 Firefox/57.0"&#125;s.headers.update(ua)s.get(root)def login(name,passwd,td): data = "__EVENTTARGET=&amp;__EVENTARGUMENT=&amp;__VIEWSTATE="+td+"&amp;tbName="+name+"&amp;tbPwd="+passwd+"&amp;btnLogin=%E7%99%BB+%E5%BD%95" headers = &#123; "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8", "Accept-Language": "zh-CN,zh;q=0.9", #自行修改 "Referer": "http://192.168.9.12/npels/", #自行修改 "Content-Type": "application/x-www-form-urlencoded", &#125; t = s.post(root+"/login.aspx", data = data, headers = headers) print("登陆成功") ctoken = t.text[t.text.find("InitToken('") + 11:t.text.find("InitToken('") + 49] c = requests.cookies.RequestsCookieJar() c.set('ctoken', ctoken) s.cookies.update(c) s.get(root+"/studentdefault.aspx")def randomnocache(): return str(random.random())def getanswer(part,ttid,sheetid,sttid): data = "action=getPart&amp;partnum="+str(part)+"&amp;ttid="+str(ttid)+"&amp;sheetid="+str(sheetid)+"&amp;sttid="+str(sttid)+"&amp;nocache="+randomnocache() headers = &#123; "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8", "Accept-Language": "zh-CN,zh;q=0.9", "Referer": "http://192.168.9.12/npels/student/viewTestTask.aspx",#自行修改 "Content-Type": "application/x-www-form-urlencoded", &#125; ans=s.post(url=answerurl,data=data,headers=headers) if ans.text.find("服务器错误")==-1: return ans.textdef answer(ttid,sheetid,sttid): fo = open("/Users/yi/EnglishAnswer.html","a+")#自行修改 fo.write(getanswer(1, ttid, sheetid, sttid)) fo.write(getanswer(2, ttid, sheetid, sttid)) fo.write(getanswer(3, ttid, sheetid, sttid)) fo.write(getanswer(4, ttid, sheetid, sttid)) fo.close()login("1****","*****","/wE*******lkZDQMqMmW++++CnYG62OwBIGUt") #自行修改,分别为登录名,密码,__VIEWSTATE的参数answer(3215,1**7,244***)#此处输入 ttid, sheetid, sttid的值 后续答案是从viewTestTask.aspx传参获取的.并不需要登陆,于是就可以简化成如下代码. 1234567891011121314151617181920212223242526272829303132import randomimport requestsroot = "http://192.168.9.12/npels/"answerurl=root+"/Student/viewTestTask.aspx"ctoken = Nones = requests.session()def randomnocache(): return str(random.random())def getanswer(part,ttid,sheetid,sttid): data = "action=getPart&amp;partnum="+str(part)+"&amp;ttid="+str(ttid)+"&amp;sheetid="+str(sheetid)+"&amp;sttid="+str(sttid)+"&amp;nocache="+randomnocache() headers = &#123; "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,/;q=0.8", "Accept-Language": "zh-CN,zh;q=0.9", "Referer": "http://192.168.9.12/npels/student/viewTestTask.aspx", "Content-Type": "application/x-www-form-urlencoded", &#125; ans=s.post(url=answerurl,data=data,headers=headers) if ans.text.find("服务器错误")==-1: return ans.textdef answer(ttid,sheetid,sttid): fo = open("/Users/yinys/EnglishAnswer1.html","w+") fo.write(getanswer(1, ttid, sheetid, sttid)) fo.write(getanswer(2, ttid, sheetid, sttid)) fo.write(getanswer(3, ttid, sheetid, sttid)) fo.write(getanswer(4, ttid, sheetid, sttid)) fo.close()answer(3270,1776,246359)]]></content>
+      <categories>
+        <category>Study</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[使用iPic快捷使用微博图床]]></title>
+    <url>%2F2018%2F09%2F09%2FiPic%2F</url>
+    <content type="text"><![CDATA[图床是什么 图床一般是指储存图片的服务器，有国内和国外之分。 国外的图床由于有空间距离等因素决定访问速度很慢影响图片显示速度。 国内也分为单线空间、多线空间和cdn加速三种。 参见: 图床是什么 iPic是什么 有了图床神器 iPic，不论屏幕截图、还是复制图片，都可以自动上传、保存 Markdown 格式的链接，直接粘贴插入，够懒人吧？ 使用 Hexo | Heroku 或 WordPress 写博客、在公众号发文章、在知乎讨论、在豆瓣灌水、在论坛发帖、跨境做外贸电商 … iPic 带给你从未有过的插图体验。 更多介绍：https://toolinbox.net/iPic/ 使用使用非常简单,打开后只需要把图片拖拽到菜单栏图标即可上传. 软件默认使用的是 微博图床,如有其他需要则需要升级专业版.¥68/年.其实免费版就已足够. 上传之后你可以点击被上传的图片快速复制Markdown地址,非常贴心. 配合Typora无缝连接在Typora的偏好设置里–打上 通过iPic上传图片 ,之后复制粘贴剪贴板里的图片会自动上传到图床.]]></content>
+      <categories>
+        <category>Blog</category>
+      </categories>
+      <tags>
+        <tag>hexo</tag>
+        <tag>图床</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[WindowsServer是什么,为什么占用了大量系统资源]]></title>
+    <url>%2F2018%2F09%2F09%2Fwhy-winserver%2F</url>
+    <content type="text"><![CDATA[当我访问我的博客时,我发现WindowServer进程占用大量CPU资源. 通过查阅资料发现此进程和Linux 中的X server相当,是显卡绘制传输到显示器的服务, 当显卡压力过高时,此进程会占用大量CPU资源. WindowServer是MacOS的核心部分，并且是您的应用程序与显示器之间的联系。 如果您在Mac的显示屏上看到某些东西，那么WindowServer将其放在那里。 您打开的每个窗口，您浏览的每个网站，您播放的每个游戏 - WindowServer“将其全部显示在屏幕上。 如果技术上倾向于苹果的开发者指南，您可以阅读更多内容 ，但阅读量并不是很明朗。 为什么WindowServer使用如此多的CPU？ 每个应用程序与WindowServer进行通信，以便在显示器上绘制东西。 如果WindowServer占用大量的CPU电源，请尝试关闭应用程序并查看使用情况是否下降。 如果在关闭特定程序后看到特别大的下降，该程序可能会对高CPU使用负责。 在某种程度上，这是正常的：不断更改屏幕上显示内容的程序将会使用WindowServer，这意味着它们将耗尽CPU功耗。 因此，对于游戏，视频编辑器和其他不断刷新的应用程序，导致WindowServer CPU使用率的上升是有意义的。 话虽如此，有时一个软件中的错误可能会导致WindowServer CPU使用量过大。 如果您注意到这种模式，并且不要认为应用程序应该导致WindowServer CPU使用率的大幅上升，请考虑与开发人员联系。 你可能已经发现他们可以解决的问题。]]></content>
+      <categories>
+        <category>Mac</category>
+      </categories>
+      <tags>
+        <tag>Mac</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[使用图床,为GP节省空间]]></title>
+    <url>%2F2018%2F09%2F07%2F%E4%BD%BF%E7%94%A8sm-ms%E5%9B%BE%E5%BA%8A-%E4%B8%BAGP%E8%8A%82%E7%9C%81%E7%A9%BA%E9%97%B4%2F</url>
+    <content type="text"><![CDATA[图床是什么图床一般是指储存图片的服务器，有国内和国外之分。 国外的图床由于有空间距离等因素决定访问速度很慢影响图片显示速度。 国内也分为单线空间、多线空间和cdn加速三种。 使用图床sm.ms是一个比较好的免费图床.这里我以上传到 https://sm.ms/ 这个图床做为说明，它的 API 文档为：https://sm.ms/doc/ 如何配置这里以MWeb为例 iOS 版 MWeb 图床功能中自定义图床的使用指南]]></content>
+      <categories>
+        <category>Blog</category>
+      </categories>
+      <tags>
+        <tag>hexo</tag>
+        <tag>图床</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[为你的博客加入一言吧]]></title>
+    <url>%2F2018%2F09%2F07%2Fmikko%2F</url>
+    <content type="text"><![CDATA[一言是什么 简单来说，一言指的就是一句话，可以是动漫中的台词，也可以是网络上的各种小段子。或是感动，或是开心，有或是单纯的回忆。来到这里，留下你所喜欢的那一句句话，与大家分享，这就是一言存在的目的。——hitokoto.us 我能干什么在个人简介引入一言,每次刷新更换一言。 具体方法在站点配置文件中的 subtitle: 引入js脚本.1&lt;script type="text/javascript" src="https://api.imjad.cn/hitokoto/?cat=&amp;charset=utf-8&amp;length=50&amp;encode=js&amp;fun=sync&amp;source="&gt;&lt;/script&gt;&lt;div id="hitokoto"&gt;&lt;script&gt;hitokoto()&lt;/script&gt; 其他可选方案123侧栏：.\themes\主题目录\layout\_macro\sidebar.swig页脚：.\themes\主题目录\layout\_partials\footer.swig文章页面：.\themes\主题目录\layout\post.swig 一言api地址]]></content>
+      <categories>
+        <category>Blog</category>
+      </categories>
+      <tags>
+        <tag>hexo</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[加入SSL证书使用https仍然没有绿锁的一次经历]]></title>
+    <url>%2F2018%2F09%2F05%2Fsslcerinto%2F</url>
+    <content type="text"><![CDATA[经过两天的摸索,总算是把博客搭完了,于是开始折腾上个人域名,使用https协议.但是经过一般折腾,使用https后仍然没有绿锁. 经过爬贴发现可能是js脚本引用了http协议的地址.深入查找后发现,无解. 最后在群友大佬的帮助,使用开发者工具(F12)发现罪魁祸首. 这个地址是头像引用. 解决方法编辑主战配置文件修改头像引用地址 最后]]></content>
+      <categories>
+        <category>Blog</category>
+      </categories>
+      <tags>
+        <tag>Hexo</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[如何配置zsh]]></title>
+    <url>%2F2018%2F09%2F04%2Fzshrc%2F</url>
+    <content type="text"><![CDATA[在知乎大神的基础上进行修改,配置自己的.zshrcrepo地址 ： https://github.com/yiny0liuyin/zshconfig.zshrc.git 效果 实现的功能自动跳转高亮安装皮肤powerlevel9k命令提示自动补全…. 依赖请检查是否已经安装git,zsh,oh-my-zsh.大陆用户确保已经使用了代理 请使用127.0.0.1:1086的socks端口 否则请自行修改 安装.zshrc 中的 export all_proxy=127.0.0.1:1086 改成 其他 请使用 powerline字体 安装oh-my-zsh请确保已安装curl 1sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)" 安装antigen1cd ~ &amp;&amp; git clone https://github.com/yiny0liuyin/zshconfig.zshrc.git &amp;&amp; cd zshconfig.zshrc &amp;&amp; mv 安装antigen.zshrc ~/.zshrc &amp;&amp; zsh 使用安装完成后 请执行 1cd &amp;&amp; cd zshconfig.zshrc &amp;&amp; mv .zshrc ~/.zshrc 如果你觉得麻烦请执行(忽略以上两条代码)1git clone https://github.com/yiny0liuyin/zshconfig.zshrc.git &amp;&amp; cd zshconfig.zshrc &amp;&amp; mv 原始.zshrc ~/.zshrc &amp;&amp; zsh]]></content>
+      <tags>
+        <tag>shell</tag>
+      </tags>
+  </entry>
+</search>

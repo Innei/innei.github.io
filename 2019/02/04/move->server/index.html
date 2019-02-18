@@ -1,0 +1,518 @@
+<!DOCTYPE html><html class="theme-next mist use-motion" lang=zh-Hans><head><meta charset=UTF-8><meta http-equiv=X-UA-Compatible content="IE=edge"><meta name=viewport content="width=device-width, initial-scale=1, maximum-scale=1"><meta name=theme-color content=#222><script>
+  (function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/0f81ff2f.js","daovoice")
+  daovoice('init', {
+      app_id: "a754d349"
+    });
+  daovoice('update');
+  </script><meta http-equiv=Cache-Control content=no-transform><meta http-equiv=Cache-Control content=no-siteapp><link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel=stylesheet type=text/css><link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel=stylesheet type=text/css><link href="/css/main.css?v=5.1.4" rel=stylesheet type=text/css><link rel=apple-touch-icon sizes=180x180 href="/big.ico?v=5.1.4"><link rel=icon type=image/png sizes=32x32 href="/big.ico?v=5.1.4"><link rel=icon type=image/png sizes=16x16 href="/home.ico?v=5.1.4"><link rel=mask-icon href="/big.ico?v=5.1.4" color=#222><meta name=keywords content=Blog,Hexo,Cloud,><meta name=description content=写下这边文章主要是我在迁移过程中走了很多弯路,以此警戒.><meta name=keywords content=Blog,Hexo,Cloud><meta property=og:type content=article><meta property=og:title content=迁移Hexo到云服务器的一次经历><meta property=og:url content="https://blog.yiny.ml/2019/02/04/move->server/index.html"><meta property=og:site_name content=荫茵小窝><meta property=og:description content=写下这边文章主要是我在迁移过程中走了很多弯路,以此警戒.><meta property=og:locale content=zh-Hans><meta property=og:image content=https://s2.ax1x.com/2019/02/04/kJDfmQ.gif><meta property=og:image content=https://ws1.sinaimg.cn/large/006tNc79ly1fzuhp81iwij327w09kwfy.jpg><meta property=og:image content=https://ws4.sinaimg.cn/large/006tNc79ly1fzuht4cttdj31y80q2n3d.jpg><meta property=og:image content=https://s2.ax1x.com/2019/02/04/kJDROg.gif><meta property=og:image content=https://ws2.sinaimg.cn/large/006tNc79ly1fzun5r6ofqj31ch0u0gpn.jpg><meta property=og:image content=https://ws4.sinaimg.cn/large/006tNc79ly1fzune0ytpwj31cj0u0myp.jpg><meta property=og:image content=https://ws4.sinaimg.cn/large/006tNc79gy1fzvl372q53j30zc0u0q5v.jpg><meta property=og:updated_time content=2019-02-18T11:15:46.548Z><meta name=twitter:card content=summary><meta name=twitter:title content=迁移Hexo到云服务器的一次经历><meta name=twitter:description content=写下这边文章主要是我在迁移过程中走了很多弯路,以此警戒.><meta name=twitter:image content=https://s2.ax1x.com/2019/02/04/kJDfmQ.gif><script type=text/javascript id=hexo.configurations>
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"hide","offset":12,"b2t":false,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script><link rel=canonical href="https://blog.yiny.ml/2019/02/04/move->server/"><title>迁移Hexo到云服务器的一次经历 | 荫茵小窝</title><script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+          m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-134193110-1', 'auto');
+  ga('send', 'pageview');
+</script><script type=text/javascript>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?40c87b943cd5f4cb90d15a1084d6f2a2";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script></head><body itemscope itemtype=http://schema.org/WebPage lang=zh-Hans><div class="container sidebar-position-left page-post-detail"><div class=headband></div><a href=https://github.com/yiny0liuyin class=github-corner aria-label="View source on Github"><svg width=80 height=80 viewbox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden=true><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill=currentColor style="transform-origin: 130px 106px;" class=octo-arm></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill=currentColor class=octo-body></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style><header id=header class=header itemscope itemtype=http://schema.org/WPHeader><div class=header-inner><div class=site-brand-wrapper><div class=site-meta><div class=custom-logo-site-title><a href="/" class=brand rel=start><span class=logo-line-before><i></i></span> <span class=site-title>荫茵小窝</span> <span class=logo-line-after><i></i></span></a></div><p class=site-subtitle><script type=text/javascript src="https://api.imjad.cn/hitokoto/?cat=&charset=utf-8&length=50&encode=js&fun=sync&source="></script><div id=hitokoto><script>hitokoto()</script></div></p></div><div class=site-nav-toggle><button><span class=btn-bar></span> <span class=btn-bar></span> <span class=btn-bar></span></button></div></div><nav class=site-nav><ul id=menu class=menu><li class="menu-item menu-item-home"><a href="/" rel=section><i class="menu-item-icon fa fa-fw fa-home"></i><br>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel=section><i class="menu-item-icon fa fa-fw fa-user"></i><br>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel=section><i class="menu-item-icon fa fa-fw fa-tags"></i><br>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel=section><i class="menu-item-icon fa fa-fw fa-th"></i><br>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel=section><i class="menu-item-icon fa fa-fw fa-archive"></i><br>归档</a></li><li class="menu-item menu-item-search"><a href=javascript:; class=popup-trigger><i class="menu-item-icon fa fa-search fa-fw"></i><br>搜索</a></li></ul><div class=site-search><div class="popup search-popup local-search-popup"><div class="local-search-header clearfix"><span class=search-icon><i class="fa fa-search"></i></span> <span class=popup-btn-close><i class="fa fa-times-circle"></i></span><div class=local-search-input-wrapper><input autocomplete=off placeholder=搜索... spellcheck=false type=text id=local-search-input></div></div><div id=local-search-result></div></div></div></nav></div></header><main id=main class=main><div class=main-inner><div class=content-wrap><div id=content class=content><div id=posts class=posts-expand><article class="post post-type-normal" itemscope itemtype=http://schema.org/Article><div class=post-block><link itemprop=mainEntityOfPage href="https://blog.yiny.ml/2019/02/04/move->server/"><span hidden itemprop=author itemscope itemtype=http://schema.org/Person><meta itemprop=name content=yiny><meta itemprop=description><meta itemprop=image content="https://q.qlogo.cn/headimg_dl?dst_uin=1003521738&spec=100"></span> <span hidden itemprop=publisher itemscope itemtype=http://schema.org/Organization><meta itemprop=name content=荫茵小窝></span><header class=post-header><h1 class=post-title itemprop="name headline">迁移Hexo到云服务器的一次经历</h1><div class=post-meta><span class=post-time><span class=post-meta-item-icon><i class="fa fa-calendar-o"></i></span> <span class=post-meta-item-text>发表于</span><time title=创建于 itemprop="dateCreated datePublished" datetime=2019-02-04T16:20:57+08:00>2019-02-04</time><span class=post-meta-divider>|</span> <span class=post-meta-item-icon><i class="fa fa-calendar-check-o"></i></span> <span class=post-meta-item-text>更新于&#58;</span><time title=更新于 itemprop=dateModified datetime=2019-02-18T19:15:46+08:00>2019-02-18</time></span> <span class=post-category><span class=post-meta-divider>|</span> <span class=post-meta-item-icon><i class="fa fa-folder-o"></i></span> <span class=post-meta-item-text>分类于</span> <span itemprop=about itemscope itemtype=http://schema.org/Thing><a href="/categories/Blog/" itemprop=url rel=index><span itemprop=name>Blog</span></a></span></span> <span class=post-comments-count><span class=post-meta-divider>|</span> <span class=post-meta-item-icon><i class="fa fa-comment-o"></i></span> <a href="/2019/02/04/move->server/#comments" itemprop=discussionUrl><span class="post-comments-count valine-comment-count" data-xid="/2019/02/04/move->server/" itemprop=commentCount></span></a></span> <span id="/2019/02/04/move->server/" class=leancloud_visitors data-flag-title=迁移Hexo到云服务器的一次经历><span class=post-meta-divider>|</span> <span class=post-meta-item-icon><i class="fa fa-eye"></i></span> <span class=post-meta-item-text>热度&#58;</span> <span class=leancloud-visitors-count></span> <span>℃</span></span><div class=post-wordcount><span class=post-meta-divider>|</span> <span class=post-meta-item-icon><i class="fa fa-file-word-o"></i></span> <span class=post-meta-item-text>字数统计&#58;</span> <span title=字数统计>2k</span> <span class=post-meta-divider>|</span> <span class=post-meta-item-icon><i class="fa fa-clock-o"></i></span> <span class=post-meta-item-text>阅读时长 &asymp;</span> <span title=阅读时长>8</span></div><div class=post-description>写下这边文章主要是我在迁移过程中走了很多弯路,以此警戒.</div></div></header><div class=post-body itemprop=articleBody><blockquote><p>今天是大年初一, 下午配置域名跳转时又出现了问题, 几经波折, 终于搞定了~ 所以来更新一下博文.</p></blockquote><p>原先, 我的博客托管在Github Pages上,<del>这几天</del>一直都很慢.. 加载要半年.</p><p><a href=https://imgchr.com/i/kJDfmQ target=_blank rel=noopener><img src=https://s2.ax1x.com/2019/02/04/kJDfmQ.gif alt=kJDfmQ.gif></a></p><p>于是乎, 今晚没事干, 决定迁移到服务器上面, 选的是GCP的服务器, 地区选在新加坡. 延迟大概有80ms, 比github快多了. GCP的好处有以下:</p><ol><li>均衡负载, 可以实现全球cdn加速</li><li>免费.</li></ol><h3 id=预备工作><a href=#预备工作 class=headerlink title=预备工作></a>预备工作</h3><p>虚拟主机一台. 国内可选用 腾讯云, 阿里云. 学生机9.9还是可以接受的.</p><p>Linux环境, 我选用的是Debian 9.</p><p>域名.</p><p><em>开始之前,确保你能够免密连接你的主机, 则可以减少很多时间来部署. 通常采用public key authorization</em></p><p>通过ssh连接服务器之后, 首先安装git 和 nginx.</p><figure class="highlight bash"><table><tr><td class=gutter><pre><span class=line>1</span><br></pre></td><td class=code><pre><span class=line>sudo apt install nginx git</span><br></pre></td></tr></table></figure><h3 id=初始化-Git-仓库><a href=#初始化-Git-仓库 class=headerlink title="初始化 Git 仓库"></a>初始化 Git 仓库</h3><h4 id=建立仓库><a href=#建立仓库 class=headerlink title=建立仓库></a>建立仓库</h4><p>可以将git仓库放到自定义位置，我是将其放在 /var/repo/blog.git 目录下的</p><figure class="highlight bash"><table><tr><td class=gutter><pre><span class=line>1</span><br><span class=line>2</span><br><span class=line>3</span><br></pre></td><td class=code><pre><span class=line>sudo mkdir /var/repo</span><br><span class=line><span class=built_in>cd</span> /var/repo</span><br><span class=line>sudo git init --bare blog.git</span><br></pre></td></tr></table></figure><p>使用 –bare 参数，Git 就会创建一个裸仓库，裸仓库没有工作区，我们不会在裸仓库上进行操作，它只为共享而存在。</p><h4 id=配置-git-hooks><a href=#配置-git-hooks class=headerlink title="配置 git hooks"></a>配置 git hooks</h4><blockquote><p>我们这里要使用的是 post-receive 的 hook，这个 hook 会在整个 git 操作过程完结以后被运行，关于 hooks<br>的详情内容可以<a href=https://git-scm.com/book/zh/v2/%E8%87%AA%E5%AE%9A%E4%B9%89-Git-Git-%E9%92%A9%E5%AD%90 target=_blank rel=noopener>参考这里</a>。</p></blockquote><p>在 blog.git/hooks 目录下新建一个 post-receive 文件</p><figure class="highlight bash"><table><tr><td class=gutter><pre><span class=line>1</span><br></pre></td><td class=code><pre><span class=line><span class=built_in>cd</span> /var/repo/blog.git/hooks</span><br></pre></td></tr></table></figure><p>编辑这个文件</p><figure class="highlight bash"><table><tr><td class=gutter><pre><span class=line>1</span><br></pre></td><td class=code><pre><span class=line>nano post-receive</span><br></pre></td></tr></table></figure><p>在 post-receive 文件中写入如下内容</p><figure class="highlight bash"><table><tr><td class=gutter><pre><span class=line>1</span><br><span class=line>2</span><br></pre></td><td class=code><pre><span class=line><span class=meta>#!/bin/sh</span></span><br><span class=line>git --work-tree=/home/www/hexo --git-dir=/var/repo/blog.git checkout -f</span><br></pre></td></tr></table></figure><blockquote><p>注意，/home/www/hexo 要换成你自己的部署目录，正如上文所说，我是的配置目录是/home/www/hexo。/var/repo/blog.git是git仓库的位置。上面那句 git 命令可以在我们每次 push 完之后，把部署目录更新到博客的最新生成状态。这样便可以完成达到自动部署的目的了。</p></blockquote><p>设置这个文件的可执行权限</p><figure class="highlight bash"><table><tr><td class=gutter><pre><span class=line>1</span><br></pre></td><td class=code><pre><span class=line>chmod +x post-receive</span><br></pre></td></tr></table></figure><h4 id=配置本地-config-yml文件-完成自动化部署><a href=#配置本地-config-yml文件-完成自动化部署 class=headerlink title=配置本地_config.yml文件,完成自动化部署></a>配置本地_config.yml文件,完成自动化部署</h4><ul><li>现在配置 hexo 的 deploy</li></ul><p>修改 hexo 目录下的 _config.yml 找到 deploy, 修改为：</p><figure class="highlight yaml"><table><tr><td class=gutter><pre><span class=line>1</span><br><span class=line>2</span><br><span class=line>3</span><br><span class=line>4</span><br><span class=line>5</span><br><span class=line>6</span><br></pre></td><td class=code><pre><span class=line><span class=attr>deploy:</span> </span><br><span class=line><span class=attr>  type:</span> <span class=string>git</span></span><br><span class=line><span class=attr>  repository:</span> </span><br><span class=line><span class=attr>    GCP:</span> <span class=string>root@x.x.x.x:/var/www/blog.git</span></span><br><span class=line><span class=attr>    github:</span> <span class=string>git@github.com:xxx</span></span><br><span class=line><span class=attr>  branch:</span> <span class=string>master</span></span><br></pre></td></tr></table></figure><blockquote><p>repo 的地址为你自己的地址以及 git 仓库目录</p></blockquote><p>至此，我们的 hexo 自动部署已经全部配置好了</p><h4 id=推送本地hexo到远程服务器><a href=#推送本地hexo到远程服务器 class=headerlink title=推送本地hexo到远程服务器></a>推送本地hexo到远程服务器</h4><p>打开终端, cd到本地hexo目录, 输入</p><figure class="highlight plain"><table><tr><td class=gutter><pre><span class=line>1</span><br></pre></td><td class=code><pre><span class=line>hexo clean &amp;&amp; hexo g &amp;&amp; hexo d</span><br></pre></td></tr></table></figure><p>将同时push到github和远程服务器</p><h3 id=配置nginx><a href=#配置nginx class=headerlink title=配置nginx></a>配置nginx</h3><p>nginx用于监听80和443端口, 实现http(80)自动跳转https(443).</p><p>前提是 你需要一个ssl证书.</p><ul><li>为防止直接ip的访问，使用return 444; 直接丢弃Host为ip或者不存在的包。</li></ul><p>配置如下:</p><figure class="highlight plain"><table><tr><td class=gutter><pre><span class=line>1</span><br><span class=line>2</span><br><span class=line>3</span><br><span class=line>4</span><br><span class=line>5</span><br><span class=line>6</span><br><span class=line>7</span><br><span class=line>8</span><br><span class=line>9</span><br><span class=line>10</span><br><span class=line>11</span><br><span class=line>12</span><br><span class=line>13</span><br><span class=line>14</span><br><span class=line>15</span><br><span class=line>16</span><br><span class=line>17</span><br><span class=line>18</span><br><span class=line>19</span><br><span class=line>20</span><br><span class=line>21</span><br><span class=line>22</span><br><span class=line>23</span><br><span class=line>24</span><br><span class=line>25</span><br><span class=line>26</span><br><span class=line>27</span><br><span class=line>28</span><br><span class=line>29</span><br><span class=line>30</span><br><span class=line>31</span><br><span class=line>32</span><br><span class=line>33</span><br><span class=line>34</span><br><span class=line>35</span><br><span class=line>36</span><br><span class=line>37</span><br><span class=line>38</span><br><span class=line>39</span><br><span class=line>40</span><br></pre></td><td class=code><pre><span class=line>server &#123;</span><br><span class=line>    listen 80 default_server;</span><br><span class=line>    server_name _;</span><br><span class=line>    return 444;</span><br><span class=line>    </span><br><span class=line>&#125;</span><br><span class=line>server &#123;</span><br><span class=line>    listen 443 default_server;</span><br><span class=line>    server_name _;</span><br><span class=line>    ssl_certificate /var/www/x.crt; </span><br><span class=line>    ssl_certificate_key /var/www/x.key; </span><br><span class=line>    return 444;</span><br><span class=line>&#125;</span><br><span class=line>server &#123;</span><br><span class=line>    listen 80;</span><br><span class=line>    server_name yiny.ml;</span><br><span class=line>    index index.html index.php index.htm;</span><br><span class=line>   </span><br><span class=line>    return      301 https://$server_name$request_uri;      </span><br><span class=line>  </span><br><span class=line>    location ~ / &#123;</span><br><span class=line>    root /home/www/hexo;</span><br><span class=line>    index index.html index.php index.htm;</span><br><span class=line>    &#125;</span><br><span class=line>    &#125;</span><br><span class=line>server &#123;</span><br><span class=line>	 listen 443 ssl http2;</span><br><span class=line>     ssl on;</span><br><span class=line></span><br><span class=line>        </span><br><span class=line>     ssl_certificate /var/www/x.crt; # 对应origin certificate</span><br><span class=line>     ssl_certificate_key /var/www/x.key; # 对应private key</span><br><span class=line>	 root /home/www/hexo;</span><br><span class=line>     server_name yiny.ml;</span><br><span class=line></span><br><span class=line>	 index index.html index.htm index.nginx-debian.html;</span><br><span class=line></span><br><span class=line>	&#125;</span><br><span class=line>&#125;</span><br><span class=line>&#125;</span><br></pre></td></tr></table></figure><p>在server_name 一处修改为自己的域名.</p><p>ssl_certificate(_key)填写自己的ssl认证文件(crt和key)</p><p><em>这里说下我之前遇到的坑, cloudflare的ssl证书只有在使用它的cdn加速后才会是 “认证的证书”,否则都是”证书不信任”,这里推荐使用腾讯云dnspod解析</em></p><blockquote><p>一般常规操作都是直接套cf比较妥。毕竟可以减轻ddos的攻击。</p></blockquote><h3 id=配置域名><a href=#配置域名 class=headerlink title=配置域名></a>配置域名</h3><p>进入域名控制台后, 进行如下配置,见 记录值 修改为 虚拟主机的ip.</p><p><img src=https://ws1.sinaimg.cn/large/006tNc79ly1fzuhp81iwij327w09kwfy.jpg alt=image-20190204165134469></p><p>等待10分钟后. 试试进入域名吧.</p><p><img src=https://ws4.sinaimg.cn/large/006tNc79ly1fzuht4cttdj31y80q2n3d.jpg alt=image-20190204165519545></p><p>速度明显比github pages快多了, http顺利跳转https.</p><p><a href=https://imgchr.com/i/kJDROg target=_blank rel=noopener><img src=https://s2.ax1x.com/2019/02/04/kJDROg.gif alt=kJDROg.gif></a></p><h3 id=进阶配置和管理><a href=#进阶配置和管理 class=headerlink title=进阶配置和管理></a>进阶配置和管理</h3><h4 id=跳转配置><a href=#跳转配置 class=headerlink title=跳转配置></a>跳转配置</h4><h4 id=设置404跳转网站><a href=#设置404跳转网站 class=headerlink title=设置404跳转网站></a>设置404跳转网站</h4><figure class="highlight plain"><table><tr><td class=gutter><pre><span class=line>1</span><br></pre></td><td class=code><pre><span class=line>error_page  404 500 502 503 504  /404.html;</span><br></pre></td></tr></table></figure><h4 id=403跳转百度><a href=#403跳转百度 class=headerlink title=403跳转百度></a>403跳转百度</h4><figure class="highlight plain"><table><tr><td class=gutter><pre><span class=line>1</span><br></pre></td><td class=code><pre><span class=line>error_page 403 = http://baidu.com;</span><br></pre></td></tr></table></figure><h4 id=datanet配置><a href=#datanet配置 class=headerlink title=datanet配置></a>datanet配置</h4><p>datanet是linux上一款性能分析工具, 并且具有webUI后端.</p><p><img src=https://ws2.sinaimg.cn/large/006tNc79ly1fzun5r6ofqj31ch0u0gpn.jpg alt=image-20190204200027567></p><p>他有如下好处:</p><ul><li>实时</li></ul><p>Netdata可在<strong>3毫秒</strong>内将图表查询结果反馈给到网页上。在3毫秒内，Netdata完成了计算图表结果，生成json文本，压缩并发送到web浏览器这些操作。查看access.log可看到这些操作各花费了多少时间。</p><ul><li>无需管理员身份运行</li></ul><p>Netdata无需管理员身份。如果以管理员身份启动Netdata，它会切换到netdata使用者身份来运行。</p><ul><li>无需大量手动配置</li></ul><p>Netdata支持大量的配置设定，开发者让Netdata自动检测大部分环境，但仍有一些无法覆盖的需要用户手动配置。</p><ul><li>无需硬盘输出/输入</li></ul><p>Netdata不占用硬盘吞吐量，只是会记录日志，而且我们甚至可以禁用日志操作。这个设计有效避免了工具会干扰其他应用表现的副作用。</p><ul><li>嵌入式web服务器</li></ul><p>无需运行其他软件来查看netdata输出结果，打开网页查看。</p><ul><li>图表化的服务质量数据</li><li>以动态图表显示linux内核流量控制服务质量类别。</li></ul><ul><li>话不多说, 开始配置吧.</li></ul><figure class="highlight bash"><table><tr><td class=gutter><pre><span class=line>1</span><br></pre></td><td class=code><pre><span class=line>bash &lt;(curl -Ss https://my-netdata.io/kickstart.sh)</span><br></pre></td></tr></table></figure><p>安装后默认是通过<a href="http://xxx:19999/" target=_blank rel=noopener>http://xxx:19999/</a> 访问(xxx是你的主机ip)</p><p>由于netdata没有帐号密码体系，为保护服务器隐私，我们要使用nginx反代，通过域名访问，并使用账号密码授权。<br>首先，我们安装apache工具集，我们需要其中的htpasswd为我们生成用户信息<br><figure class="highlight bash"><table><tr><td class=gutter><pre><span class=line>1</span><br></pre></td><td class=code><pre><span class=line>sudo apt-get install apache2-utils</span><br></pre></td></tr></table></figure></p><p>接下来创建目录，创建账号<br><figure class="highlight bash"><table><tr><td class=gutter><pre><span class=line>1</span><br><span class=line>2</span><br><span class=line>3</span><br><span class=line>4</span><br></pre></td><td class=code><pre><span class=line>mkdir /usr/<span class=built_in>local</span>/nginx</span><br><span class=line>htpasswd -c /usr/<span class=built_in>local</span>/nginx/passwd.db username</span><br><span class=line><span class=built_in>pwd</span></span><br><span class=line>re-type <span class=built_in>pwd</span></span><br></pre></td></tr></table></figure></p><p>添加一个nginx的配置vim /etc/nginx/conf.d/netdata.conf，内容如下</p><figure class="highlight plain"><table><tr><td class=gutter><pre><span class=line>1</span><br><span class=line>2</span><br><span class=line>3</span><br><span class=line>4</span><br><span class=line>5</span><br><span class=line>6</span><br><span class=line>7</span><br><span class=line>8</span><br><span class=line>9</span><br><span class=line>10</span><br><span class=line>11</span><br><span class=line>12</span><br><span class=line>13</span><br><span class=line>14</span><br><span class=line>15</span><br><span class=line>16</span><br><span class=line>17</span><br><span class=line>18</span><br><span class=line>19</span><br><span class=line>20</span><br><span class=line>21</span><br><span class=line>22</span><br></pre></td><td class=code><pre><span class=line>upstream netdatahttp</span><br><span class=line>&#123;</span><br><span class=line>        server 127.0.0.1:19999;</span><br><span class=line>&#125;</span><br><span class=line></span><br><span class=line>server &#123;</span><br><span class=line></span><br><span class=line>  listen *:80;</span><br><span class=line>  server_name netdata.yiny.ml;</span><br><span class=line>  auth_basic &quot;netdata&quot;;</span><br><span class=line>  auth_basic_user_file /usr/local/nginx/passwd.db;</span><br><span class=line></span><br><span class=line>  location /</span><br><span class=line>  &#123;</span><br><span class=line>        proxy_pass http://netdatahttp;</span><br><span class=line></span><br><span class=line>        proxy_redirect off;</span><br><span class=line>        proxy_set_header        Host $host;</span><br><span class=line>        proxy_set_header        X-Real_IP $remote_addr;</span><br><span class=line>        proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;</span><br><span class=line>  &#125;</span><br><span class=line>&#125;</span><br></pre></td></tr></table></figure><p>打开域名测试一下效果</p><p><img src=https://ws4.sinaimg.cn/large/006tNc79ly1fzune0ytpwj31cj0u0myp.jpg alt=image-20190204200821315></p><h4 id=配置多域名跳转同一域名><a href=#配置多域名跳转同一域名 class=headerlink title=配置多域名跳转同一域名></a>配置多域名跳转同一域名</h4><p>首先, 你要在域名控制台将域名指向主机ip,</p><p>在nginx中新建一个虚拟主机,</p><figure class="highlight plain"><table><tr><td class=gutter><pre><span class=line>1</span><br><span class=line>2</span><br><span class=line>3</span><br><span class=line>4</span><br><span class=line>5</span><br><span class=line>6</span><br><span class=line>7</span><br><span class=line>8</span><br><span class=line>9</span><br><span class=line>10</span><br><span class=line>11</span><br><span class=line>12</span><br><span class=line>13</span><br><span class=line>14</span><br><span class=line>15</span><br><span class=line>16</span><br><span class=line>17</span><br><span class=line>18</span><br><span class=line>19</span><br><span class=line>20</span><br><span class=line>21</span><br><span class=line>22</span><br><span class=line>23</span><br><span class=line>24</span><br><span class=line>25</span><br><span class=line>26</span><br><span class=line>27</span><br><span class=line>28</span><br><span class=line>29</span><br></pre></td><td class=code><pre><span class=line></span><br><span class=line>server &#123;</span><br><span class=line>    listen 80 ;</span><br><span class=line>    server_name ab.com;</span><br><span class=line>    index index.html index.php index.htm;</span><br><span class=line>  </span><br><span class=line> </span><br><span class=line>    return      301 https://yiny.ml$request_uri;      </span><br><span class=line>  </span><br><span class=line>    location ~ / &#123;</span><br><span class=line>    root /home/www/toblog;</span><br><span class=line>    index index.html index.php index.htm;</span><br><span class=line>    &#125;</span><br><span class=line>    &#125;</span><br><span class=line></span><br><span class=line>server &#123;</span><br><span class=line>    listen 443 ;</span><br><span class=line>    server_name ab.com;</span><br><span class=line>    index index.html index.php index.htm;</span><br><span class=line>    ssl_certificate /xxxx; # 对应origin certificate</span><br><span class=line>    ssl_certificate_key /xxxx; # 对应private key</span><br><span class=line> </span><br><span class=line>    return      301 https://yiny.ml$request_uri;      </span><br><span class=line>  </span><br><span class=line>    location ~ / &#123;</span><br><span class=line>    root /home/www/toblog;</span><br><span class=line>    index index.html index.php index.htm;</span><br><span class=line>    &#125;</span><br><span class=line>    &#125;</span><br></pre></td></tr></table></figure><p>需要注意的是, 443端口必须引入证书才能实现跳转. 否则, 就会出现这样的结果….</p><p><img src=https://ws4.sinaimg.cn/large/006tNc79gy1fzvl372q53j30zc0u0q5v.jpg alt=telegram-cloud-file-5-853503991-122867--2141001562724131874></p><p>配置完成之后,重启nginx.</p><p>这样就搞定了..</p><h3 id=压缩静态网站><a href=#压缩静态网站 class=headerlink title=压缩静态网站></a>压缩静态网站</h3><ul><li>安装gulp3.9.1(一定要这个)</li></ul><figure class="highlight bash"><table><tr><td class=gutter><pre><span class=line>1</span><br></pre></td><td class=code><pre><span class=line>npm install gulp@3.9.1</span><br></pre></td></tr></table></figure><p>在站点根目录创建gulpfile.js文件，内容如下</p><figure class=highlight><table><tr><td class=gutter><pre><span class=line>1</span><br><span class=line>2</span><br><span class=line>3</span><br><span class=line>4</span><br><span class=line>5</span><br><span class=line>6</span><br><span class=line>7</span><br><span class=line>8</span><br><span class=line>9</span><br><span class=line>10</span><br><span class=line>11</span><br><span class=line>12</span><br><span class=line>13</span><br><span class=line>14</span><br><span class=line>15</span><br><span class=line>16</span><br><span class=line>17</span><br><span class=line>18</span><br><span class=line>19</span><br><span class=line>20</span><br><span class=line>21</span><br><span class=line>22</span><br><span class=line>23</span><br><span class=line>24</span><br><span class=line>25</span><br><span class=line>26</span><br><span class=line>27</span><br><span class=line>28</span><br><span class=line>29</span><br><span class=line>30</span><br><span class=line>31</span><br><span class=line>32</span><br><span class=line>33</span><br><span class=line>34</span><br><span class=line>35</span><br><span class=line>36</span><br><span class=line>37</span><br><span class=line>38</span><br><span class=line>39</span><br><span class=line>40</span><br><span class=line>41</span><br><span class=line>42</span><br><span class=line>43</span><br><span class=line>44</span><br><span class=line>45</span><br><span class=line>46</span><br><span class=line>47</span><br><span class=line>48</span><br><span class=line>49</span><br></pre></td><td class=code><pre><span class=line>var gulp = require('gulp');</span><br><span class=line>var babel = require('gulp-babel');</span><br><span class=line>var plugins = require('gulp-load-plugins')();</span><br><span class=line></span><br><span class=line>gulp.task("clean",function() &#123;</span><br><span class=line>    return gulp.src("./public/*")</span><br><span class=line>    .pipe(plugins.clean());</span><br><span class=line>&#125;);</span><br><span class=line></span><br><span class=line>gulp.task("css",function()&#123;</span><br><span class=line>    var stream = gulp.src(["public/**/*.css","!public/**/*.min.css"])</span><br><span class=line>        .pipe(plugins.minifyCss(&#123;compatibility: 'ie8'&#125;))</span><br><span class=line>        .pipe(gulp.dest("./public/"));</span><br><span class=line>    return stream;</span><br><span class=line>&#125;);</span><br><span class=line></span><br><span class=line>gulp.task("js",function()&#123;</span><br><span class=line>    var stream = gulp.src(["public/**/*.js","!public/**/*.min.js"])</span><br><span class=line>		.pipe(babel(&#123;presets: ['env']&#125;))</span><br><span class=line>        .pipe(plugins.uglify())</span><br><span class=line>        .pipe(gulp.dest("./public/"));</span><br><span class=line>    return stream;</span><br><span class=line>&#125;);</span><br><span class=line></span><br><span class=line>gulp.task("html",function()&#123;</span><br><span class=line>    var stream = gulp.src("public/**/*.html")</span><br><span class=line>        .pipe(plugins.minifyHtml())</span><br><span class=line>        //.pipe(plugins.rename(&#123;suffix: ".gulp"&#125;))</span><br><span class=line>        .pipe(gulp.dest("./public/"));</span><br><span class=line>    return stream;</span><br><span class=line>&#125;);</span><br><span class=line></span><br><span class=line>gulp.task("mv",["html","css","js"],function() &#123;</span><br><span class=line>    var stream = gulp.src("./dst/*")</span><br><span class=line>        .pipe(gulp.dest("./public/"));</span><br><span class=line>        /*.pipe(plugins.shell([</span><br><span class=line>            <span class=string>"cp -r ./dst/* ./public/"</span></span><br><span class=line>        ]));</span><br><span class=line>        */</span><br><span class=line>    return stream;</span><br><span class=line>&#125;);</span><br><span class=line></span><br><span class=line>gulp.task("watch",function() &#123;</span><br><span class=line>    gulp.watch("public/*",["optimise"]);</span><br><span class=line>&#125;);</span><br><span class=line></span><br><span class=line>gulp.task("default",["html","css","js"],function()&#123;</span><br><span class=line>    console.log("gulp task ok!");</span><br><span class=line>&#125;);</span><br></pre></td></tr></table></figure><p>在hexo d之前先运行gulp即可。</p><h1 id=参考><a href=#参考 class=headerlink title=参考></a>参考</h1><a href="/2019/02/03/record(from19-2-3)/" title="记录折腾路上用到的教程 自2-3开始">记录折腾路上用到的教程 自2-3开始</a></div><div><div class=my_post_copyright><script src=//cdn.bootcss.com/clipboard.js/1.5.10/clipboard.min.js></script><script src=https://cdn.bootcss.com/jquery/2.0.0/jquery.min.js></script><script src=https://unpkg.com/sweetalert/dist/sweetalert.min.js></script><p><span>本文标题:</span><a href="/2019/02/04/move->server/">迁移Hexo到云服务器的一次经历</a></p><p><span>文章作者:</span><a href="/" title="访问 yiny 的个人博客">yiny</a></p><p><span>发布时间:</span>2019年02月04日 - 16:02</p><p><span>最后更新:</span>2019年02月18日 - 19:02</p><p><span>原始链接:</span><a href="/2019/02/04/move->server/" title=迁移Hexo到云服务器的一次经历>https://blog.yiny.ml/2019/02/04/move->server/</a> <span class=copy-path title=点击复制文章链接><i class="fa fa-clipboard" data-clipboard-text="https://blog.yiny.ml/2019/02/04/move->server/" aria-label=复制成功！></i></span></p><p><span>许可协议:</span><i class="fa fa-creative-commons"></i> <a rel=license href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target=_blank title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者。</p></div><script> 
+    var clipboard = new Clipboard('.fa-clipboard');
+    $(".fa-clipboard").click(function(){
+      clipboard.on('success', function(){
+        swal({   
+          title: "",   
+          text: '复制成功',
+          icon: "success", 
+          showConfirmButton: true
+          });
+	});
+    });  
+</script></div><footer class=post-footer><div class=post-tags><a href="/tags/Blog/" rel=tag><i class="fa fa-tag"></i> Blog</a> <a href="/tags/Hexo/" rel=tag><i class="fa fa-tag"></i> Hexo</a> <a href="/tags/Cloud/" rel=tag><i class="fa fa-tag"></i> Cloud</a></div><div class=post-nav><div class="post-nav-next post-nav-item"><a href="/2019/02/03/record(from19-2-3)/" rel=next title="记录折腾路上用到的教程 自2-3开始"><i class="fa fa-chevron-left"></i> 记录折腾路上用到的教程 自2-3开始</a></div><span class=post-nav-divider></span><div class="post-nav-prev post-nav-item"><a href="/2019/02/09/转-搞ACM的你伤不起/" rel=prev title=(转)搞ACM的你伤不起>(转)搞ACM的你伤不起 <i class="fa fa-chevron-right"></i></a></div></div></footer></div></article><div class=post-spread></div></div></div><div class=comments id=comments></div></div><div class=sidebar-toggle><div class=sidebar-toggle-line-wrap><span class="sidebar-toggle-line sidebar-toggle-line-first"></span> <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span> <span class="sidebar-toggle-line sidebar-toggle-line-last"></span></div></div><aside id=sidebar class=sidebar><div class=sidebar-inner><ul class="sidebar-nav motion-element"><li class="sidebar-nav-toc sidebar-nav-active" data-target=post-toc-wrap>文章目录</li><li class=sidebar-nav-overview data-target=site-overview-wrap>站点概览</li></ul><section class="site-overview-wrap sidebar-panel"><div class=site-overview><div class="site-author motion-element" itemprop=author itemscope itemtype=http://schema.org/Person><img class=site-author-image itemprop=image src="https://q.qlogo.cn/headimg_dl?dst_uin=1003521738&spec=100" alt=yiny><p class=site-author-name itemprop=name>yiny</p><p class="site-description motion-element" itemprop=description>来者是客</p></div><nav class="site-state motion-element"><div class="site-state-item site-state-posts"><a href="/archives/"><span class=site-state-item-count>18</span> <span class=site-state-item-name>日志</span></a></div><div class="site-state-item site-state-categories"><a href=/categories/index.html><span class=site-state-item-count>6</span> <span class=site-state-item-name>分类</span></a></div><div class="site-state-item site-state-tags"><a href=/tags/index.html><span class=site-state-item-count>16</span> <span class=site-state-item-name>标签</span></a></div></nav></div></section><section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active"><div class=post-toc><div class=post-toc-content><ol class=nav><li class="nav-item nav-level-3"><a class=nav-link href=#预备工作><span class=nav-number>1.</span> <span class=nav-text>预备工作</span></a></li><li class="nav-item nav-level-3"><a class=nav-link href=#初始化-Git-仓库><span class=nav-number>2.</span> <span class=nav-text>初始化 Git 仓库</span></a><ol class=nav-child><li class="nav-item nav-level-4"><a class=nav-link href=#建立仓库><span class=nav-number>2.1.</span> <span class=nav-text>建立仓库</span></a></li><li class="nav-item nav-level-4"><a class=nav-link href=#配置-git-hooks><span class=nav-number>2.2.</span> <span class=nav-text>配置 git hooks</span></a></li><li class="nav-item nav-level-4"><a class=nav-link href=#配置本地-config-yml文件-完成自动化部署><span class=nav-number>2.3.</span> <span class=nav-text>配置本地_config.yml文件,完成自动化部署</span></a></li><li class="nav-item nav-level-4"><a class=nav-link href=#推送本地hexo到远程服务器><span class=nav-number>2.4.</span> <span class=nav-text>推送本地hexo到远程服务器</span></a></li></ol></li><li class="nav-item nav-level-3"><a class=nav-link href=#配置nginx><span class=nav-number>3.</span> <span class=nav-text>配置nginx</span></a></li><li class="nav-item nav-level-3"><a class=nav-link href=#配置域名><span class=nav-number>4.</span> <span class=nav-text>配置域名</span></a></li><li class="nav-item nav-level-3"><a class=nav-link href=#进阶配置和管理><span class=nav-number>5.</span> <span class=nav-text>进阶配置和管理</span></a><ol class=nav-child><li class="nav-item nav-level-4"><a class=nav-link href=#跳转配置><span class=nav-number>5.1.</span> <span class=nav-text>跳转配置</span></a></li><li class="nav-item nav-level-4"><a class=nav-link href=#设置404跳转网站><span class=nav-number>5.2.</span> <span class=nav-text>设置404跳转网站</span></a></li><li class="nav-item nav-level-4"><a class=nav-link href=#403跳转百度><span class=nav-number>5.3.</span> <span class=nav-text>403跳转百度</span></a></li><li class="nav-item nav-level-4"><a class=nav-link href=#datanet配置><span class=nav-number>5.4.</span> <span class=nav-text>datanet配置</span></a></li><li class="nav-item nav-level-4"><a class=nav-link href=#配置多域名跳转同一域名><span class=nav-number>5.5.</span> <span class=nav-text>配置多域名跳转同一域名</span></a></li></ol></li><li class="nav-item nav-level-3"><a class=nav-link href=#压缩静态网站><span class=nav-number>6.</span> <span class=nav-text>压缩静态网站</span></a></li></ol><li class="nav-item nav-level-1"><a class=nav-link href=#参考><span class=nav-number></span> <span class=nav-text>参考</span></a></li></div></div></section></div></aside></div></main><footer id=footer class=footer><div class=footer-inner><script async src=//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js></script><div class=copyright>&copy; <span itemprop=copyrightYear>2019</span> <span class=with-love><i class="fa fa-user"></i></span> <span class=author itemprop=copyrightHolder>yiny</span><div class=powered-by><br><div class=powered-by><span>|</span>由 <a class=theme-link target=_blank href=https://hexo.io>Hexo</a> 强力驱动</div></div></div><span id=busuanzi_container_site_pv>本站总访问量<span id=busuanzi_value_site_pv></span>次</span> <span class=post-meta-divider>|</span> <span id=showDays></span><span>|</span><div class=theme-info>主题 &mdash; <a class=theme-link target=_blank href=https://github.com/iissnan/hexo-theme-next>NexT.Mist</a></div><div class=theme-info><div class=powered-by></div><span class=post-count>博客全站共10.4k字</span></div><script>
+  var seconds = 1000;
+  var minutes = seconds * 60;
+  var hours = minutes * 60;
+  var days = hours * 24;
+  var years = days * 365;
+  var birthDay = Date.UTC(2018,09,04,15,00,00); // 这里设置建站时间
+  setInterval(function() {
+    var today = new Date();
+    var todayYear = today.getFullYear();
+    var todayMonth = today.getMonth()+1;
+    var todayDate = today.getDate();
+    var todayHour = today.getHours();
+    var todayMinute = today.getMinutes();
+    var todaySecond = today.getSeconds();
+    var now = Date.UTC(todayYear,todayMonth,todayDate,todayHour,todayMinute,todaySecond);
+    var diff = now - birthDay;
+    var diffYears = Math.floor(diff/years);
+    var diffDays = Math.floor((diff/days)-diffYears*365);
+    var diffHours = Math.floor((diff-(diffYears*365+diffDays)*days)/hours);
+    var diffMinutes = Math.floor((diff-(diffYears*365+diffDays)*days-diffHours*hours)/minutes);
+    var diffSeconds = Math.floor((diff-(diffYears*365+diffDays)*days-diffHours*hours-diffMinutes*minutes)/seconds);
+      document.getElementById('showDays').innerHTML="本站已在各种灾难中运行了 "+diffYears+" 年 "+diffDays+" 天 "+diffHours+" 小时 "+diffMinutes+" 分钟 "+diffSeconds+" 秒";
+}, 1000);
+</script></div><script type=text/javascript>
+
+</script></footer></div><div class=back-to-top><i class="fa fa-arrow-up"></i> <span id=scrollpercent><span>0</span>%</span></div><script type=text/javascript src=/js/src/crash_cheat.js></script><script type=text/javascript>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script><script type=text/javascript src="/lib/jquery/index.js?v=2.1.3"></script><script type=text/javascript src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script><script type=text/javascript src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script><script type=text/javascript src="/lib/velocity/velocity.min.js?v=1.2.1"></script><script type=text/javascript src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script><script type=text/javascript src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script><script type=text/javascript src="/js/src/utils.js?v=5.1.4"></script><script type=text/javascript src="/js/src/motion.js?v=5.1.4"></script><script type=text/javascript src="/js/src/scrollspy.js?v=5.1.4"></script><script type=text/javascript src="/js/src/post-details.js?v=5.1.4"></script><script type=text/javascript src="/js/src/bootstrap.js?v=5.1.4"></script><script src=//cdn1.lncld.net/static/js/3.0.4/av-min.js></script><script src=//unpkg.com/valine/dist/Valine.min.js></script><script type=text/javascript>
+    var GUEST = ['nick','mail','link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item=>{
+      return GUEST.indexOf(item)>-1;
+    });
+    new Valine({
+        el: '#comments' ,
+        verify: true,
+        notify: true,
+        appId: 'RExEo97vKUDmYRKvgg8A7MiP-gzGzoHsz',
+        appKey: 'rl7GuT2KFz8NYuFQIpMQQ8XP',
+        placeholder: '看完了快来评论吧!',
+        avatar:'mm',
+        guest_info:guest,
+        pageSize:'10' || 10,
+    });
+  </script><script type=text/javascript>
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script><script src=https://cdn1.lncld.net/static/js/av-core-mini-0.6.4.js></script><script>AV.initialize("RExEo97vKUDmYRKvgg8A7MiP-gzGzoHsz", "rl7GuT2KFz8NYuFQIpMQQ8XP");</script><script>
+    function showTime(Counter) {
+      var query = new AV.Query(Counter);
+      var entries = [];
+      var $visitors = $(".leancloud_visitors");
+
+      $visitors.each(function () {
+        entries.push( $(this).attr("id").trim() );
+      });
+
+      query.containedIn('url', entries);
+      query.find()
+        .done(function (results) {
+          var COUNT_CONTAINER_REF = '.leancloud-visitors-count';
+
+          if (results.length === 0) {
+            $visitors.find(COUNT_CONTAINER_REF).text(0);
+            return;
+          }
+
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.get('url');
+            var time = item.get('time');
+            var element = document.getElementById(url);
+
+            $(element).find(COUNT_CONTAINER_REF).text(time);
+          }
+          for(var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = document.getElementById(url);
+            var countSpan = $(element).find(COUNT_CONTAINER_REF);
+            if( countSpan.text() == '') {
+              countSpan.text(0);
+            }
+          }
+        })
+        .fail(function (object, error) {
+          console.log("Error: " + error.code + " " + error.message);
+        });
+    }
+
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+      var query = new AV.Query(Counter);
+
+      query.equalTo("url", url);
+      query.find({
+        success: function(results) {
+          if (results.length > 0) {
+            var counter = results[0];
+            counter.fetchWhenSave(true);
+            counter.increment("time");
+            counter.save(null, {
+              success: function(counter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.get('time'));
+              },
+              error: function(counter, error) {
+                console.log('Failed to save Visitor num, with error message: ' + error.message);
+              }
+            });
+          } else {
+            var newcounter = new Counter();
+            /* Set ACL */
+            var acl = new AV.ACL();
+            acl.setPublicReadAccess(true);
+            acl.setPublicWriteAccess(true);
+            newcounter.setACL(acl);
+            /* End Set ACL */
+            newcounter.set("title", title);
+            newcounter.set("url", url);
+            newcounter.set("time", 1);
+            newcounter.save(null, {
+              success: function(newcounter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(newcounter.get('time'));
+              },
+              error: function(newcounter, error) {
+                console.log('Failed to create');
+              }
+            });
+          }
+        },
+        error: function(error) {
+          console.log('Error:' + error.code + " " + error.message);
+        }
+      });
+    }
+
+    $(function() {
+      var Counter = AV.Object.extend("Counter");
+      if ($('.leancloud_visitors').length == 1) {
+        addCount(Counter);
+      } else if ($('.post-title-link').length > 1) {
+        showTime(Counter);
+      }
+    });
+  </script><script type=text/javascript src=/js/src/clipboard.min.js></script><script type=text/javascript src=/js/src/clipboard-use.js></script></body></html>
