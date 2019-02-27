@@ -2,6 +2,27 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>https://blog.yiny.ml/about/index.html</loc>
+    
+    <lastmod>2019-02-27T12:43:20.951Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://blog.yiny.ml/2019/02/27/halo/</loc>
+    
+    <lastmod>2019-02-27T12:08:20.406Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://blog.yiny.ml/2018/09/07/%E4%BD%BF%E7%94%A8sm-ms%E5%9B%BE%E5%BA%8A-%E4%B8%BAGP%E8%8A%82%E7%9C%81%E7%A9%BA%E9%97%B4/</loc>
+    
+    <lastmod>2019-02-27T10:59:56.385Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>https://blog.yiny.ml/2018/11/07/howtogetEAnswer/</loc>
     
     <lastmod>2019-02-27T08:09:57.471Z</lastmod>
@@ -26,13 +47,6 @@
     <loc>https://blog.yiny.ml/2019/02/03/record(from19-2-3)/</loc>
     
     <lastmod>2019-02-20T11:40:35.599Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>https://blog.yiny.ml/about/index.html</loc>
-    
-    <lastmod>2019-02-19T08:51:19.256Z</lastmod>
     
   </url>
   
@@ -124,13 +138,6 @@
     <loc>https://blog.yiny.ml/2018/09/04/zshrc/</loc>
     
     <lastmod>2019-01-24T10:33:45.482Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>https://blog.yiny.ml/2018/09/07/%E4%BD%BF%E7%94%A8sm-ms%E5%9B%BE%E5%BA%8A-%E4%B8%BAGP%E8%8A%82%E7%9C%81%E7%A9%BA%E9%97%B4/</loc>
-    
-    <lastmod>2018-09-09T07:26:46.541Z</lastmod>
     
   </url>
   
