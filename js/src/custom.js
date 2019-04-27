@@ -101,12 +101,3 @@ $(document).ready(function() {
   createCopyBtns();
 });
 
-var img_arr = document.querySelectorAll('img[src]');
-
-for (var i = 0; i < img_arr.length; i++ )
-{
-	if(img_arr[i].src.indexOf('.sinaimg') !== -1)
-	{
-		img_arr[i].src = img_arr[i].src.replace(/[A-z]+[0-9].sinaimg.cn/g,'shizuri.net/get_img.php?src='); 
-	}
-}

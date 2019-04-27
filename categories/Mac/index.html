@@ -59,6 +59,17 @@
     var diffSeconds = Math.floor((diff-(diffYears*365+diffDays)*days-diffHours*hours-diffMinutes*minutes)/seconds);
       document.getElementById('showDays').innerHTML="本站已在各种灾难中运行了 "+diffYears+" 年 "+diffDays+" 天 "+diffHours+" 小时 "+diffMinutes+" 分钟 "+diffSeconds+" 秒";
 }, 1000);
+
+var img_arr = document.querySelectorAll('img[src]');
+
+for (var i = 0; i < img_arr.length; i++ )
+{
+  if(img_arr[i].src.indexOf('.sinaimg') !== -1)
+  {
+    img_arr[i].src = img_arr[i].src.replace(/[A-z]+[0-9].sinaimg.cn/g,'shizuri.net/get_img.php?src='); 
+  }
+}
+
 </script></div><script type=text/javascript>
 
   <script>
